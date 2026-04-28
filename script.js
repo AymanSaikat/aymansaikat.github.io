@@ -143,15 +143,32 @@ document.addEventListener('DOMContentLoaded', () => {
     hamburger.addEventListener('click', toggleMenu);
     closeMenu.addEventListener('click', toggleMenu);
 
-    // Close menu when a link is clicked
+    // Close menu when a link is clicked (excluding the dropdown toggle)
     mobileLinks.forEach(link => {
         link.addEventListener('click', () => {
-            mobileMenu.classList.remove('active');
+            // Don't close menu if clicking the projects dropdown toggle
+            if (!link.classList.contains('mobile-dropdown-toggle')) {
+                mobileMenu.classList.remove('active');
+            }
         });
     });
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // 5. BACK TO TOP BUTTON
+    // 5. MOBILE PROJECTS DROPDOWN TOGGLE
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const mobileProjectsToggle = document.getElementById('mobile-projects-toggle');
+    const mobileProjectsMenu = document.getElementById('mobile-projects-menu');
+
+    if (mobileProjectsToggle && mobileProjectsMenu) {
+        mobileProjectsToggle.addEventListener('click', () => {
+            const arrow = mobileProjectsToggle.querySelector('.mobile-dropdown-arrow');
+            mobileProjectsMenu.classList.toggle('open');
+            arrow.classList.toggle('open');
+        });
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 6. BACK TO TOP BUTTON
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     const backToTopBtn = document.getElementById('back-to-top');
 
