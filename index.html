@@ -18,43 +18,63 @@
 </head>
 <body>
 
-    <!-- Canvas for Particles -->
-    <canvas id="particles-canvas"></canvas>
+ <!-- Navigation -->
+<nav class="navbar">
+    <div class="container nav-container">
+        <a href="#" class="logo">RA<span>.</span></a>
+        <ul class="nav-links">
+            <li><a href="#home" class="nav-link">Home</a></li>
+            <li><a href="#about" class="nav-link">About</a></li>
+            <li><a href="#skills" class="nav-link">Skills</a></li>
+            <li><a href="#experience" class="nav-link">Experience</a></li>
+            <li><a href="#education" class="nav-link">Education</a></li>
 
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="container nav-container">
-            <a href="#" class="logo">RA<span>.</span></a>
-            <ul class="nav-links">
-                <li><a href="#home" class="nav-link">Home</a></li>
-                <li><a href="#about" class="nav-link">About</a></li>
-                <li><a href="#skills" class="nav-link">Skills</a></li>
-                <li><a href="#experience" class="nav-link">Experience</a></li>
-                <li><a href="#education" class="nav-link">Education</a></li>
-                <li><a href="#contact" class="nav-link">Contact</a></li>
-            </ul>
-            <a href="#contact" class="btn btn-primary">Hire Me</a>
-            
-            <!-- Hamburger Trigger -->
-            <div class="hamburger" id="hamburger">
-                <i class="fas fa-bars"></i>
-            </div>
+            <!-- Projects Dropdown -->
+            <li class="nav-item has-dropdown">
+                <a href="#projects" class="nav-link dropdown-toggle">
+                    Projects <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="https://your-project-one.com" class="dropdown-link" target="_blank">Project One</a></li>
+                    <li><a href="https://your-project-two.com" class="dropdown-link" target="_blank">Project Two</a></li>
+                </ul>
+            </li>
+
+            <li><a href="#contact" class="nav-link">Contact</a></li>
+        </ul>
+        <a href="#contact" class="btn btn-primary">Hire Me</a>
+
+        <!-- Hamburger Trigger -->
+        <div class="hamburger" id="hamburger">
+            <i class="fas fa-bars"></i>
         </div>
-    </nav>
+    </div>
+</nav>
+
 
     <!-- Mobile Menu Overlay -->
-    <div class="mobile-menu" id="mobile-menu">
-        <div class="close-menu" id="close-menu">
-            <i class="fas fa-times"></i>
+<div class="mobile-menu" id="mobile-menu">
+    <div class="close-menu" id="close-menu">
+        <i class="fas fa-times"></i>
+    </div>
+    <a href="#home" class="nav-link">Home</a>
+    <a href="#about" class="nav-link">About</a>
+    <a href="#skills" class="nav-link">Skills</a>
+    <a href="#experience" class="nav-link">Experience</a>
+    <a href="#education" class="nav-link">Education</a>
+
+    <!-- Projects submenu in mobile -->
+    <div class="mobile-dropdown">
+        <span class="nav-link mobile-dropdown-title">Projects <i class="fas fa-chevron-down"></i></span>
+        <div class="mobile-dropdown-items" id="mobile-projects-dropdown">
+            <a href="https://your-project-one.com" class="nav-link sub-link" target="_blank">— Project One</a>
+            <a href="https://your-project-two.com" class="nav-link sub-link" target="_blank">— Project Two</a>
         </div>
-        <a href="#home" class="nav-link">Home</a>
-        <a href="#about" class="nav-link">About</a>
-        <a href="#skills" class="nav-link">Skills</a>
-        <a href="#experience" class="nav-link">Experience</a>
-        <a href="#education" class="nav-link">Education</a>
-        <a href="#contact" class="nav-link">Contact</a>
     </div>
 
+    <a href="#contact" class="nav-link">Contact</a>
+</div>
+    
     <!-- Hero Section -->
     <header id="home">
         <div class="container hero-content">
