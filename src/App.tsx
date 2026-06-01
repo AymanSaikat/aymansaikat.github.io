@@ -86,7 +86,7 @@ export default function App() {
     bio: "Highly organized and tech-savvy professional with professional experience in system administration, WordPress management, video editing, and graphic design. Adept at maintaining web infrastructures, executing digital marketing campaigns, and managing large-scale database operations with high precision.",
     email: "dev.rimonahmed@gmail.com",
     location: "Savar DOHS, Dhaka",
-    cvUrl: "https://github.com/AymanSaikat/aymansaikat.github.io/blob/aefd51a899d3de2ec5724b4f0c1a4b469d275bb1/assets/Rimon%20Ahmed%20Resume%20for%20web.pdf",
+    cvUrl: "https://github.com/AymanSaikat/aymansaikat.github.io/blob/main/assets/Rimon%20Ahmed%20Resume%20for%20web.pdf",
     github: "https://github.com/aymansaikat",
     linkedin: "https://linkedin.com/in/aymansaikat",
     twitter: "https://twitter.com/AymanSaikat",
@@ -138,9 +138,9 @@ export default function App() {
   const [isEmailCopied, setIsEmailCopied] = useState(false);
   const [originalCvUrl, setOriginalCvUrl] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("originalCvUrl") || "https://github.com/AymanSaikat/aymansaikat.github.io/blob/aefd51a899d3de2ec5724b4f0c1a4b469d275bb1/assets/Rimon%20Ahmed%20Resume%20for%20web.pdf";
+      return localStorage.getItem("originalCvUrl") || "https://github.com/AymanSaikat/aymansaikat.github.io/blob/main/assets/Rimon%20Ahmed%20Resume%20for%20web.pdf";
     }
-    return "https://github.com/AymanSaikat/aymansaikat.github.io/blob/aefd51a899d3de2ec5724b4f0c1a4b469d275bb1/assets/Rimon%20Ahmed%20Resume%20for%20web.pdf";
+    return "https://github.com/AymanSaikat/aymansaikat.github.io/blob/main/assets/Rimon%20Ahmed%20Resume%20for%20web.pdf";
   });
 
   // Client interactive state triggers for projects & skill viewmodes
