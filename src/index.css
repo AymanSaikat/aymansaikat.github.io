@@ -1,0 +1,450 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Bebas Neue", sans-serif;
+  --font-serif: "Cormorant Garamond", serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-bg-dark: #050508;
+  --color-bg-panel: #08080d;
+  --color-bg-card: #0d0d14;
+  --color-gold: #c8a96e;
+  --color-gold-light: #e8c98e;
+  --color-accent-teal: #2de2c4;
+  --color-accent-red: #e84545;
+  --color-text-primary: #f0eeea;
+  --color-muted-slate: #706e82;
+  --color-muted-lavender: #9490a8;
+  
+  --border-color-default: rgba(255, 255, 255, 0.08);
+}
+
+@layer utilities {
+  /* Scroll behavior */
+  html {
+    scroll-behavior: smooth;
+    background: #050508;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 3px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #050508;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #c8a96e;
+    border-radius: 2px;
+  }
+
+  /* Text Stroke for Outline Heading Effect */
+  .text-outline-gold {
+    -webkit-text-stroke: 1px rgba(200, 169, 110, 0.4);
+    color: transparent;
+  }
+
+  .text-outline-light {
+    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
+    color: transparent;
+  }
+  
+  .text-outline-giant {
+    -webkit-text-stroke: 1px rgba(200, 169, 110, 0.07);
+    color: transparent;
+  }
+
+  /* Glitch Animations */
+  @keyframes glitch1 {
+    0%, 94%, 100% { opacity: 0; transform: translate(0); }
+    95% { opacity: 0.8; transform: translate(-4px, 2px); }
+    97% { opacity: 0.8; transform: translate(4px, -2px); }
+    99% { opacity: 0; }
+  }
+
+  @keyframes glitch2 {
+    0%, 94%, 100% { opacity: 0; transform: translate(0); }
+    95% { opacity: 0.8; transform: translate(4px, -2px); }
+    97% { opacity: 0.8; transform: translate(-4px, 2px); }
+    99% { opacity: 0; }
+  }
+
+  .glitch-left::before {
+    content: attr(data-text);
+    position: absolute;
+    top: 0; left: 0;
+    color: #e84545;
+    clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+    animation: glitch1 4s 2s infinite;
+    opacity: 0;
+  }
+
+  .glitch-right::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0; left: 0;
+    color: #2de2c4;
+    clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+    animation: glitch2 4s 2s infinite;
+    opacity: 0;
+  }
+
+  /* Marquee translation animation */
+  @keyframes marquee {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .animate-marquee {
+    display: inline-flex;
+    animation: marquee 25s linear infinite;
+  }
+
+  /* Background drift animation for ambient headings */
+  @keyframes bgDrift {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -52%) scale(1.02); }
+  }
+
+  .animate-drift {
+    animation: bgDrift 20s ease-in-out infinite;
+  }
+}
+
+/* ───────────── @MEDIA PRINT RESUME STYLES ───────────── */
+@media print {
+  /* Absolute hide for the standard dark UI content wrapper and its parts */
+  .print\:hidden,
+  #root > div > div:not(#printable-cv),
+  #navbar,
+  #particles-container,
+  #particles-canvas,
+  #cursor,
+  #cursor-ring,
+  .hero-bg-text,
+  .absolute,
+  .fixed,
+  button,
+  a.btn,
+  #contact .btn,
+  .marquee-strip,
+  #contact,
+  footer {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Force standard body container behavior for pure ink printing */
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: Arial, Helvetica, -apple-system, system-ui, sans-serif !important;
+    font-size: 10pt !important;
+    line-height: 1.35 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Explicitly hide all portfolio section IDs in case they are not inside print:hidden */
+  #hero, #about, #skills, #projects, #experience, #education, #contact {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    height: 0 !important;
+  }
+
+  /* Set page margins for a clean A4/letter format printing layout */
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm !important;
+  }
+
+  /* Make sure our clean print template is displayed beautifully */
+  #printable-cv {
+    display: block !important;
+    visibility: visible !important;
+    position: relative !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important; /* Managed by page margin */
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Force all children inside the CV to have Arial font and solid print black color */
+  #printable-cv,
+  #printable-cv * {
+    font-family: Arial, Helvetica, -apple-system, sans-serif !important;
+    color: #000000 !important;
+  }
+
+  /* Clean elements for print formatting */
+  .print-icon {
+    display: inline-block !important;
+    width: 9pt !important;
+    height: 9pt !important;
+    vertical-align: middle !important;
+    margin-right: 3.5pt !important;
+    fill: #000000 !important;
+    stroke: #000000 !important;
+  }
+
+  .print-prevent-split {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .print-header {
+    text-align: center !important;
+    border-bottom: 1px solid #000000 !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .print-name {
+    font-size: 24pt !important;
+    font-weight: bold !important;
+    letter-spacing: -0.5px !important;
+    text-transform: uppercase !important;
+    color: #000000 !important;
+  }
+
+  .print-subtitle {
+    font-size: 9.5pt !important;
+    color: #000000 !important;
+    margin-top: 4px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .print-meta-grid {
+    display: flex !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    font-size: 8.5pt !important;
+    color: #000000 !important;
+    margin-top: 6px !important;
+  }
+
+  .print-section-title {
+    font-size: 11.5pt !important;
+    font-weight: bold !important;
+    color: #000000 !important;
+    border-bottom: 1px solid #000000 !important;
+    margin-top: 14px !important;
+    padding-bottom: 2px !important;
+    margin-bottom: 8px !important;
+    text-transform: none !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .print-item-title {
+    font-size: 9.5pt !important;
+    font-weight: bold !important;
+    color: #000000 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+  }
+
+  .print-item-meta {
+    font-size: 9pt !important;
+    color: #000000 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-top: 1px !important;
+    margin-bottom: 3px !important;
+  }
+
+  .print-bullet {
+    list-style-type: none !important;
+    margin-left: 0px !important;
+    font-size: 9pt !important;
+    line-height: 1.35 !important;
+    color: #000000 !important;
+  }
+}
+
+/* ───────────── HIGH-CONTRAST LIGHT MODE OVERRIDES ───────────── */
+.light {
+  --color-bg-dark: #fbfbfa !important;       /* Pristine warm-white canvas */
+  --color-bg-panel: #f3f2ee !important;      /* Soft warm-light-grey panels */
+  --color-bg-card: #ffffff !important;       /* Clean bright white card body background */
+  --color-text-primary: #121214 !important;  /* Ultra high contrast rich black for crisp body copy */
+  --color-muted-slate: #52505c !important;   /* Highly readable darker grey for labels/subtitles */
+  --color-muted-lavender: #312f38 !important;/* High contrast deep grey for secondary copy */
+  
+  /* Adjusted gold theme colors for light backgrounds so they meet contrast / accessibility minimums */
+  --color-gold: #916e2b !important;          /* Antique dark gold with high accessibility readability */
+  --color-gold-light: #ab853c !important;    /* Highly defined gold accents */
+
+  --border-color-default: rgba(18, 18, 20, 0.15) !important;
+}
+
+/* Ensure smooth element background transitions of colors on toggle */
+*, *::before, *::after {
+  transition-property: background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 400ms;
+}
+
+/* Let's ignore transition delay for custom animations like marquee or drift */
+.animate-marquee, .animate-drift, .glitch {
+  transition-property: none !important;
+}
+
+/* High-contrast element adjustments in light mode */
+html.light {
+  background: #fbfbfa !important;
+}
+
+.light ::-webkit-scrollbar-track {
+  background: #fbfbfa !important;
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: #916e2b !important;
+}
+
+/* Text outline effects updated for light-colored background */
+.light .text-outline-gold {
+  -webkit-text-stroke: 1.2px rgba(145, 110, 43, 0.45) !important;
+}
+
+.light .text-outline-light {
+  -webkit-text-stroke: 1px rgba(18, 18, 20, 0.12) !important;
+}
+
+.light .text-outline-giant {
+  -webkit-text-stroke: 1.5px rgba(145, 110, 43, 0.07) !important;
+}
+
+/* Support for custom inline white border utility overrides */
+.light .border-white\/\[0\.02\] { border-color: rgba(18, 18, 20, 0.04) !important; }
+.light .border-white\/\[0\.04\] { border-color: rgba(18, 18, 20, 0.06) !important; }
+.light .border-white\/\[0\.05\] { border-color: rgba(18, 18, 20, 0.08) !important; }
+.light .border-white\/\[0\.06\] { border-color: rgba(18, 18, 20, 0.09) !important; }
+.light .border-white\/\[0\.08\] { border-color: rgba(18, 18, 20, 0.12) !important; }
+.light .border-white\/\[0\.1\] { border-color: rgba(18, 18, 20, 0.14) !important; }
+.light .border-white\/\[0\.15\] { border-color: rgba(18, 18, 20, 0.18) !important; }
+.light .border-white\/5 { border-color: rgba(18, 18, 20, 0.08) !important; }
+.light .border-white\/10 { border-color: rgba(18, 18, 20, 0.14) !important; }
+.light .border-white\/20 { border-color: rgba(18, 18, 20, 0.22) !important; }
+
+/* Support for custom inline white background utility overrides */
+.light .bg-white\/\[0\.02\] { background-color: rgba(18, 18, 20, 0.02) !important; }
+.light .bg-white\/\[0\.03\] { background-color: rgba(18, 18, 20, 0.03) !important; }
+.light .bg-white\/\[0\.04\] { background-color: rgba(18, 18, 20, 0.04) !important; }
+.light .bg-white\/\[0\.05\] { background-color: rgba(18, 18, 20, 0.05) !important; }
+.light .bg-white\/5 { background-color: rgba(18, 18, 20, 0.04) !important; }
+.light .bg-white\/10 { background-color: rgba(18, 18, 20, 0.08) !important; }
+.light .bg-white\/20 { background-color: rgba(18, 18, 20, 0.15) !important; }
+.light .bg-white { background-color: #ffffff !important; }
+.light .bg-black\/10 { background-color: rgba(18, 18, 20, 0.12) !important; }
+
+/* Custom inline hex colors mapping */
+.light .bg-\[\#08080d\] { background-color: #ffffff !important; }
+.light .bg-\[\#050508\] { background-color: #fbfbfa !important; }
+.light .bg-\[\#0b0b12\] { background-color: #f0efe9 !important; }
+.light .bg-\[\#0a0a0f\] { background-color: #f0efe9 !important; }
+.light .bg-\[\#030305\] { background-color: rgba(220, 218, 213, 0.95) !important; }
+.light .bg-\[\#020204\] { background-color: #fcfbfa !important; }
+.light .bg-\[\#08080c\]\/60 { background-color: rgba(243, 242, 238, 0.6) !important; }
+.light .bg-\[\#0c0c12\] { background-color: #ffffff !important; }
+
+/* Custom overlay and dialog container adjustments */
+.light .bg-\[\#020204\]\/90,
+.light .bg-\[\#020204\]\/70,
+.light .bg-black\/80,
+.light .bg-black\/50,
+.light .bg-black\/60 {
+  background-color: rgba(220, 218, 213, 0.85) !important;
+}
+
+.light .bg-\[\#08080d\]\/98 {
+  background-color: rgba(251, 251, 250, 0.98) !important;
+}
+
+/* Selection adjustments */
+.light ::selection {
+  background-color: #916e2b !important;
+  color: #ffffff !important;
+}
+
+/* Particles Canvas visibility */
+.light #particles-canvas {
+  opacity: 0.18 !important; /* Slightly more visible on light BG */
+}
+
+/* Light mode specific element text and container enhancements */
+.light .text-\[\#a0a0ab\] { color: #52505c !important; }
+.light .text-\[\#a0a0ab\]\/80 { color: rgba(82, 80, 92, 0.8) !important; }
+.light .text-\[\#a0a0ab\]\/40 { color: rgba(82, 80, 92, 0.5) !important; }
+.light .text-\[\#8f8f9e\] { color: #312f38 !important; }
+.light .text-\[\#8a8a93\] { color: #52505c !important; }
+.light .text-muted-lavender { color: #312f38 !important; }
+.light .text-muted-slate { color: #52505c !important; }
+
+/* Dynamic premium card states for Light Mode */
+.light .bg-bg-card,
+.light .bg-\[\#0d0d14\],
+.light .bg-bg-panel {
+  background-color: #ffffff !important;
+  box-shadow: 0 10px 30px -10px rgba(18, 18, 20, 0.06), 0 1px 3px rgba(18, 18, 20, 0.02) !important;
+  border-color: rgba(18, 18, 20, 0.09) !important;
+}
+
+/* Dynamic subtle grid and timeline overrides for Light mode */
+.light .border-white\/\[0\.04\] { border-color: rgba(18, 18, 20, 0.06) !important; }
+.light .border-white\/\[0\.05\] { border-color: rgba(18, 18, 20, 0.08) !important; }
+.light .border-white\/\[0\.06\] { border-color: rgba(18, 18, 20, 0.1) !important; }
+.light .border-white\/\[0\.08\] { border-color: rgba(18, 18, 20, 0.12) !important; }
+.light .border-white\/\[0\.1\] { border-color: rgba(18, 18, 20, 0.14) !important; }
+
+/* Interactive Hover utilities mapping for Light Mode */
+.light .hover:text-white:hover {
+  color: #121214 !important;
+}
+.light .group:hover .group-hover:text-white {
+  color: #121214 !important;
+}
+.light .hover:bg-white/\[0\.05\]:hover {
+  background-color: rgba(18, 18, 20, 0.08) !important;
+}
+.light .hover:bg-white/\[0\.04\]:hover {
+  background-color: rgba(18, 18, 20, 0.06) !important;
+}
+.light .hover:border-white:hover {
+  border-color: rgba(18, 18, 20, 0.4) !important;
+}
+
+/* Floating Sidenav Custom overrides for Light Mode */
+.light .floating-sidenav {
+  background-color: #ffffff !important;
+  border-color: rgba(145, 110, 43, 0.25) !important;
+  box-shadow: 0 10px 30px -10px rgba(145, 110, 43, 0.2), 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+.light .floating-sidenav-tooltip {
+  background-color: #ffffff !important;
+  border-color: rgba(145, 110, 43, 0.25) !important;
+  color: #916e2b !important;
+  box-shadow: 0 4px 16px rgba(145, 110, 43, 0.15) !important;
+}
+
+.light .floating-sidenav-dot:not(.bg-gold) {
+  background-color: rgba(18, 18, 20, 0.25) !important;
+}
+
+.light .group:hover .floating-sidenav-dot:not(.bg-gold) {
+  background-color: #ab853c !important;
+}
+

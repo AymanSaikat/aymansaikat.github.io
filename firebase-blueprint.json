@@ -1,0 +1,122 @@
+{
+  "entities": {
+    "profile": {
+      "title": "Profile",
+      "description": "Portfolio owner's main metadata",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "bio": { "type": "string" },
+        "email": { "type": "string" },
+        "cvUrl": { "type": "string" },
+        "github": { "type": "string" },
+        "linkedin": { "type": "string" },
+        "twitter": { "type": "string" },
+        "location": { "type": "string" }
+      },
+      "required": ["name", "title"]
+    },
+    "skillItem": {
+      "title": "Skill",
+      "description": "Dynamic skill record",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" }
+      },
+      "required": ["name", "category"]
+    },
+    "projectItem": {
+      "title": "Project",
+      "description": "Dynamic projects list record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "tools": { "type": "array" },
+        "demoLink": { "type": "string" },
+        "githubLink": { "type": "string" },
+        "size": { "type": "string" },
+        "year": { "type": "string" },
+        "notes": { "type": "string" },
+        "screenshots": { "type": "array" },
+        "completionPercent": { "type": "integer" }
+      },
+      "required": ["id", "title", "description", "category"]
+    },
+    "experienceItem": {
+      "title": "Experience",
+      "description": "Dynamic work history entry",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "org": { "type": "string" },
+        "location": { "type": "string" },
+        "role": { "type": "string" },
+        "tools": { "type": "array" },
+        "points": { "type": "array" },
+        "isCurrent": { "type": "boolean" }
+      },
+      "required": ["date", "org", "role", "points"]
+    },
+    "educationItem": {
+      "title": "Education",
+      "description": "Dynamic educational history entry",
+      "type": "object",
+      "properties": {
+        "degree": { "type": "string" },
+        "field": { "type": "string" },
+        "institution": { "type": "string" },
+        "duration": { "type": "string" },
+        "gpa": { "type": "string" },
+        "icon": { "type": "string" },
+        "year": { "type": "string" }
+      },
+      "required": ["degree", "institution", "duration"]
+    },
+    "message": {
+      "title": "Contact Form Submission",
+      "description": "Message received via web inbox",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "integer" },
+        "status": { "type": "string", "enum": ["unread", "read", "archived"] }
+      },
+      "required": ["name", "email", "message", "timestamp"]
+    }
+  },
+  "firestore": {
+    "profile/data": {
+      "schema": "profile",
+      "description": "Global portfolio dynamic information"
+    },
+    "skills": {
+      "schema": "skillItem",
+      "description": "Dynamic list of skill entries"
+    },
+    "projects": {
+      "schema": "projectItem",
+      "description": "Dynamic list of project details"
+    },
+    "experience": {
+      "schema": "experienceItem",
+      "description": "Dynamic workspace career log"
+    },
+    "education": {
+      "schema": "educationItem",
+      "description": "Dynamic educational background records"
+    },
+    "messages": {
+      "schema": "message",
+      "description": "Received support or collaboration inquiries"
+    }
+  }
+}

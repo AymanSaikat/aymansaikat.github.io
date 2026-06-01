@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rimon Ahmed — Digital Systems Specialist</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'%3E%3Crect x='5' y='5' width='90' height='90' rx='22' fill='%23000000' stroke='%23ffffff' stroke-width='8'%3E%3C/rect%3E%3Ctext x='50' y='54' dominant-baseline='middle' text-anchor='middle' font-family='system-ui, -apple-system, sans-serif' font-weight='900' font-size='46' letter-spacing='-3' fill='%23ffffff'%3ERA%3C/text%3E%3C/svg%3E" />
+    <script>
+      // Safeguard for window.fetch and JSON.parse in sandboxed iframe environments
+      (function() {
+        try {
+          var originalFetch = window.fetch;
+          Object.defineProperty(window, 'fetch', {
+            get: function() { return originalFetch; },
+            set: function(val) { /* Silent safeguard copy */ },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (e) {
+          // Silent catch
+        }
+
+        try {
+          var originalParse = JSON.parse;
+          JSON.parse = function(text, reviver) {
+            if (text === undefined || text === null || String(text).trim() === "undefined") {
+              return undefined;
+            }
+            try {
+              return originalParse(text, reviver);
+            } catch (err) {
+              if (typeof text === "string" && text.trim() === "undefined") {
+                return undefined;
+              }
+              throw err;
+            }
+          };
+        } catch (e) {
+          // Silent catch
+        }
+
+        // Silent specific noise logs such as CONNECTED and [vite] connected
+        try {
+          var originalLog = console.log;
+          console.log = function() {
+            if (arguments[0] && typeof arguments[0] === 'string' && (arguments[0] === "CONNECTED" || arguments[0].indexOf("CONNECTED") !== -1)) {
+              return;
+            }
+            originalLog.apply(console, arguments);
+          };
+        } catch (e) {}
+
+        try {
+          var originalDebug = console.debug;
+          console.debug = function() {
+            if (arguments[0] && typeof arguments[0] === 'string' && (arguments[0].indexOf("[vite]") !== -1 || arguments[0].indexOf("connected") !== -1 || arguments[0].indexOf("connecting") !== -1)) {
+              return;
+            }
+            originalDebug.apply(console, arguments);
+          };
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

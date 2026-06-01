@@ -1,0 +1,121 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- PHASE 3: HELPER FUNCTIONS & PRIMITIVES ---
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'rimon.newpagla@gmail.com' ||
+        request.auth.token.email == 'dev.rimonahmed@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    // --- EIGHT PILLARS: ADVANCED VALIDATION BLUEPRINTS ---
+
+    function isValidProfile(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+             data.bio is string && data.bio.size() <= 2000;
+    }
+
+    function isValidSkill(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.category is string && data.category.size() > 0 && data.category.size() <= 100;
+    }
+
+    function isValidProject(data) {
+      return data.id is string && data.id.size() > 0 && data.id.size() <= 100 &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+             data.description is string && data.description.size() <= 5000 &&
+             data.category is string && data.category.size() <= 100;
+    }
+
+    function isValidExperience(data) {
+      return data.role is string && data.role.size() > 0 && data.role.size() <= 150 &&
+             data.org is string && data.org.size() > 0 && data.org.size() <= 150 &&
+             data.date is string && data.date.size() <= 100;
+    }
+
+    function isValidEducation(data) {
+      return data.degree is string && data.degree.size() > 0 && data.degree.size() <= 150 &&
+             data.institution is string && data.institution.size() > 0 && data.institution.size() <= 150;
+    }
+
+    function isValidMessage(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 150 &&
+             data.message is string && data.message.size() > 0 && data.message.size() <= 5000;
+    }
+
+    // --- MASTER SAFETY NET ---
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- COLLECTION MATCH BLOCKS ---
+
+    // Profiles Collection (or document profile/data)
+    match /profile/{docId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidProfile(incoming());
+    }
+
+    // Skills Collection
+    match /skills/{skillId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidSkill(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Projects Collection
+    match /projects/{projectId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidProject(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Experience Collection
+    match /experience/{expId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidExperience(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Education Collection
+    match /education/{eduId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidEducation(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Messages Collection: Submit is public, reading/managing is admin only
+    match /messages/{messageId} {
+      allow create: if isValidMessage(incoming());
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Admin List
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Managed exclusively via Firebase Control Console
+    }
+  }
+}
