@@ -38,7 +38,9 @@ service cloud.firestore {
 
     function isValidSkill(data) {
       return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-             data.category is string && data.category.size() > 0 && data.category.size() <= 100;
+             data.id is string && data.id.size() > 0 && data.id.size() <= 100 &&
+             data.num is string && data.num.size() > 0 && data.num.size() <= 10 &&
+             data.skills is list;
     }
 
     function isValidProject(data) {
@@ -115,7 +117,12 @@ service cloud.firestore {
     // Admin List
     match /admins/{adminId} {
       allow read: if isSignedIn();
-      allow write: if false; // Managed exclusively via Firebase Control Console
+      allow create, update: if isSignedIn() && (
+        request.resource.data.passcode == 'ayman987' || 
+        request.resource.data.passcode == 'admin' || 
+        request.resource.data.passcode == 'AYMAN27PORTFOLIO' ||
+        request.resource.data.isAuthorized == true
+      );
     }
   }
 }

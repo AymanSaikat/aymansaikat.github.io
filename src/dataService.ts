@@ -2,7 +2,8 @@ import {
   db, 
   handleFirestoreError, 
   OperationType, 
-  isFirebaseConfigured 
+  isFirebaseConfigured,
+  auth
 } from "./firebase";
 import { 
   collection, 
@@ -88,8 +89,15 @@ export const dataService = {
         if (snap.exists()) {
           return snap.data() as Profile;
         } else {
-          // Initialize in Firestore if it doesn't exist
-          await setDoc(doc(db, "profile", "main"), initialProfile);
+          const email = auth?.currentUser?.email;
+          const isAdmin = email && (email === "rimon.newpagla@gmail.com" || email === "dev.rimonahmed@gmail.com");
+          if (isAdmin) {
+            try {
+              await setDoc(doc(db, "profile", "main"), initialProfile);
+            } catch (seedErr) {
+              console.warn("Failed to seed profile:", seedErr);
+            }
+          }
           return initialProfile;
         }
       } catch (err) {
@@ -162,9 +170,16 @@ export const dataService = {
         if (!snap.empty) {
           return snap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         } else {
-          // Seed projects
-          for (const proj of defaultProjects) {
-            await setDoc(doc(db, "projects", proj.id), proj);
+          const email = auth?.currentUser?.email;
+          const isAdmin = email && (email === "rimon.newpagla@gmail.com" || email === "dev.rimonahmed@gmail.com");
+          if (isAdmin) {
+            try {
+              for (const proj of defaultProjects) {
+                await setDoc(doc(db, "projects", proj.id), proj);
+              }
+            } catch (seedErr) {
+              console.warn("Failed to seed projects:", seedErr);
+            }
           }
           return defaultProjects;
         }
@@ -233,9 +248,16 @@ export const dataService = {
         if (!snap.empty) {
           return snap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         } else {
-          // Seed
-          for (const cat of defaultSkillCategories) {
-            await setDoc(doc(db, "skills", cat.id), cat);
+          const email = auth?.currentUser?.email;
+          const isAdmin = email && (email === "rimon.newpagla@gmail.com" || email === "dev.rimonahmed@gmail.com");
+          if (isAdmin) {
+            try {
+              for (const cat of defaultSkillCategories) {
+                await setDoc(doc(db, "skills", cat.id), cat);
+              }
+            } catch (seedErr) {
+              console.warn("Failed to seed skills:", seedErr);
+            }
           }
           return defaultSkillCategories;
         }
@@ -273,8 +295,16 @@ export const dataService = {
         if (!snap.empty) {
           return snap.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
         } else {
-          for (let i = 0; i < defaultExperience.length; i++) {
-            await setDoc(doc(db, "experience", `exp-${i}`), defaultExperience[i]);
+          const email = auth?.currentUser?.email;
+          const isAdmin = email && (email === "rimon.newpagla@gmail.com" || email === "dev.rimonahmed@gmail.com");
+          if (isAdmin) {
+            try {
+              for (let i = 0; i < defaultExperience.length; i++) {
+                await setDoc(doc(db, "experience", `exp-${i}`), defaultExperience[i]);
+              }
+            } catch (seedErr) {
+              console.warn("Failed to seed experience:", seedErr);
+            }
           }
           return defaultExperience;
         }
@@ -314,8 +344,16 @@ export const dataService = {
         if (!snap.empty) {
           return snap.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
         } else {
-          for (let i = 0; i < defaultEducation.length; i++) {
-            await setDoc(doc(db, "education", `edu-${i}`), defaultEducation[i]);
+          const email = auth?.currentUser?.email;
+          const isAdmin = email && (email === "rimon.newpagla@gmail.com" || email === "dev.rimonahmed@gmail.com");
+          if (isAdmin) {
+            try {
+              for (let i = 0; i < defaultEducation.length; i++) {
+                await setDoc(doc(db, "education", `edu-${i}`), defaultEducation[i]);
+              }
+            } catch (seedErr) {
+              console.warn("Failed to seed education:", seedErr);
+            }
           }
           return defaultEducation;
         }
@@ -349,6 +387,16 @@ export const dataService = {
   // ─── RECEIVED MESSAGES (INBOX) ───
   async getMessages(): Promise<ContactMessage[]> {
     if (isFirebaseConfigured() && db) {
+      // If no valid session is present, fall back to local storage without querying Firestore
+      // to avoid causing "Missing or insufficient permissions" console warnings.
+      if (!auth || !auth.currentUser) {
+        const local = localStorage.getItem(STORAGE_KEYS.MESSAGES);
+        if (local) {
+          return JSON.parse(local).sort((a: any, b: any) => b.timestamp - a.timestamp);
+        }
+        return [];
+      }
+
       try {
         const snap = await getDocs(collection(db, "messages"));
         return snap.docs.map(doc => ({ ...doc.data(), id: doc.id }) as ContactMessage)

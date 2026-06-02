@@ -86,7 +86,7 @@ export default function App() {
     bio: "Highly organized and tech-savvy professional with professional experience in system administration, WordPress management, video editing, and graphic design. Adept at maintaining web infrastructures, executing digital marketing campaigns, and managing large-scale database operations with high precision.",
     email: "dev.rimonahmed@gmail.com",
     location: "Savar DOHS, Dhaka",
-    cvUrl: "https://github.com/AymanSaikat/aymansaikat.github.io/blob/main/assets/Rimon%20Ahmed%20Resume%20for%20web.pdf",
+    cvUrl: "https://github.com/AymanSaikat/aymansaikat.github.io/blob/aefd51a899d3de2ec5724b4f0c1a4b469d275bb1/assets/Rimon%20Ahmed%20Resume%20for%20web.pdf",
     github: "https://github.com/aymansaikat",
     linkedin: "https://linkedin.com/in/aymansaikat",
     twitter: "https://twitter.com/AymanSaikat",
@@ -101,8 +101,25 @@ export default function App() {
   const [marqueeList, setMarqueeList] = useState<string[]>(marqueeItems);
   const [isCmsOpen, setIsCmsOpen] = useState(false);
 
+  const [isMaintenanceActive, setIsMaintenanceActive] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("ayman_portfolio_maintenance_active") === "true";
+    }
+    return false;
+  });
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("ayman_portfolio_logged_in") === "true";
+    }
+    return false;
+  });
+
   const loadCmsData = async () => {
     try {
+      if (typeof window !== "undefined") {
+        setIsMaintenanceActive(localStorage.getItem("ayman_portfolio_maintenance_active") === "true");
+        setIsAdminLoggedIn(localStorage.getItem("ayman_portfolio_logged_in") === "true");
+      }
       const p = await dataService.getProfile();
       const prs = await dataService.getProjects();
       const sks = await dataService.getSkillCategories();
@@ -138,9 +155,9 @@ export default function App() {
   const [isEmailCopied, setIsEmailCopied] = useState(false);
   const [originalCvUrl, setOriginalCvUrl] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("originalCvUrl") || "https://github.com/AymanSaikat/aymansaikat.github.io/blob/main/assets/Rimon%20Ahmed%20Resume%20for%20web.pdf";
+      return localStorage.getItem("originalCvUrl") || "https://github.com/AymanSaikat/aymansaikat.github.io/blob/aefd51a899d3de2ec5724b4f0c1a4b469d275bb1/assets/Rimon%20Ahmed%20Resume%20for%20web.pdf";
     }
-    return "https://github.com/AymanSaikat/aymansaikat.github.io/blob/main/assets/Rimon%20Ahmed%20Resume%20for%20web.pdf";
+    return "https://github.com/AymanSaikat/aymansaikat.github.io/blob/aefd51a899d3de2ec5724b4f0c1a4b469d275bb1/assets/Rimon%20Ahmed%20Resume%20for%20web.pdf";
   });
 
   // Client interactive state triggers for projects & skill viewmodes
@@ -436,6 +453,93 @@ export default function App() {
     },
   };
 
+  if (isMaintenanceActive && !isAdminLoggedIn) {
+    return (
+      <div className="bg-[#050508] text-[#f0eeea] min-h-screen relative flex flex-col justify-between items-center p-6 select-none font-mono selection:bg-gold selection:text-bg-dark antialiased overflow-hidden">
+        {/* Floating background particles */}
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          <ParticleBackground />
+        </div>
+
+        {/* Global Header decorative branding */}
+        <div className="w-full max-w-7xl mx-auto flex items-center justify-between z-10 border-b border-white/[0.04] pb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-3.5 h-3.5 bg-gold/10 border border-gold/40 rounded-full flex items-center justify-center">
+              <span className="w-1.5 h-1.5 rounded-full bg-gold animate-ping" />
+            </div>
+            <span className="text-[0.55rem] tracking-[0.25em] text-[#8a8a93] uppercase font-bold">
+              AYMAN S. CORE ARCHITECT
+            </span>
+          </div>
+          <div className="text-[0.52rem] text-muted-slate/75 uppercase tracking-widest flex items-center gap-1.5">
+            <span>CHANNELS FROZEN</span>
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+          </div>
+        </div>
+
+        {/* Interactive Maintenance Shield Block */}
+        <div className="w-full max-w-lg mx-auto py-12 flex flex-col items-center text-center z-10 space-y-8 my-auto">
+          {/* Pulsing Core Hologram Sphere */}
+          <div className="relative flex items-center justify-center w-24 h-24">
+            <div className="absolute inset-0 bg-gold/10 rounded-full border border-gold/20 animate-pulse duration-[3s]" />
+            <div className="absolute inset-2 bg-gradient-to-tr from-gold-dark/20 to-gold-light/20 rounded-full border border-gold/45 select-none animate-spin" style={{ animationDuration: '10s' }} />
+            <div className="absolute w-3 h-3 bg-gold rounded-full shadow-[0_0_20px_#c8a96e]" />
+          </div>
+
+          <div className="space-y-3">
+            <h1 className="font-display text-[2.5rem] tracking-[0.16em] text-gold uppercase text-outline-gold font-black">
+              STEALTH MODE ACTIVE
+            </h1>
+            <p className="font-mono text-[0.45rem] tracking-[0.22em] text-[#8a8a93] uppercase">
+              ADMINISTRATIVE INFRASTRUCTURE SYNCHRONIZATION
+            </p>
+          </div>
+
+          <div className="bg-[#0c0c12]/85 border border-[#ffffff]/[0.05] p-5 rounded-[2px] max-w-md w-full space-y-4 shadow-3xl text-left">
+            <div className="flex items-center gap-1.5 border-b border-[#ffffff]/[0.04] pb-2 text-[0.45rem] font-bold text-gold tracking-widest uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-gold" />
+              SYSTEM PROTOCOL DIRECTIVE
+            </div>
+            
+            <p className="font-mono text-[0.52rem] text-muted-lavender leading-relaxed uppercase tracking-wider">
+              The portfolio landing systems have been locked with an administrative maintenance shield. Dynamic databases, media streams, and page render engines are running calibration tasks.
+            </p>
+
+            <div className="flex items-center justify-between text-[0.45rem] text-[#8a8a93] uppercase tracking-widest pt-2 border-t border-[#ffffff]/[0.02]">
+              <span>System Clock Sync:</span>
+              <span className="text-gold font-bold flex items-center gap-1">
+                <Clock className="w-2.5 h-2.5 animate-spin" style={{ animationDuration: '8s' }} />
+                {currentTime || "RESTRICTED"}
+              </span>
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <p className="font-sans text-[0.62rem] text-muted-slate/50 leading-relaxed max-w-xs lowercase first-letter:uppercase">
+              Standard operations and interactive modules will restore automatically once adjustments are saved. Direct queries remains active via mail channel.
+            </p>
+          </div>
+        </div>
+
+        {/* Global Footer bypass portal */}
+        <div className="w-full max-w-7xl mx-auto flex items-center justify-between z-10 border-t border-white/[0.04] pt-4 text-[0.48rem] text-muted-slate/40 uppercase tracking-widest font-mono">
+          <span>© 2026 AYMAN Saikat. ALL SECURED.</span>
+          <button 
+            onClick={() => setIsCmsOpen(true)}
+            className="p-1 px-2 border border-white/[0.03] hover:border-gold/30 hover:bg-gold/5 bg-transparent rounded-[1px] transition-all flex items-center gap-1 cursor-pointer hover:text-gold uppercase tracking-[0.16em] group"
+            title="Administrator Bypass Authorization Trigger"
+          >
+            <Key className="w-3 h-3 text-muted-slate/50 group-hover:text-gold transition-colors" />
+            ADMIN GATES
+          </button>
+        </div>
+
+        {/* ADMIN CONTROL PANEL CMS (available even under maintenance mode) */}
+        <AdminCMS isOpen={isCmsOpen} onClose={() => setIsCmsOpen(false)} onDataUpdate={loadCmsData} />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-bg-dark text-text-primary min-h-screen relative font-serif selection:bg-gold selection:text-bg-dark antialiased transition-colors duration-500">
       <div className="print:hidden">
@@ -534,6 +638,7 @@ export default function App() {
                 strokeWidth="7"
                 pathLength="100"
                 strokeDasharray="100"
+                initial={{ strokeDashoffset: 100 }}
                 animate={{ strokeDashoffset: 100 - (100 * scrollProgress) }}
                 transition={{ type: "spring", stiffness: 120, damping: 18, mass: 0.1 }}
                 className="transition-colors duration-300"
