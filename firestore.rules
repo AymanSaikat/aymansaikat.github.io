@@ -67,6 +67,21 @@ service cloud.firestore {
              data.message is string && data.message.size() > 0 && data.message.size() <= 5000;
     }
 
+    function isValidSecurityLog(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.eventType is string && data.eventType.size() <= 100 &&
+             data.timestamp is string && data.timestamp.size() <= 50 &&
+             data.severity is string && (data.severity == 'info' || data.severity == 'warning' || data.severity == 'success' || data.severity == 'critical') &&
+             data.summary is string && data.summary.size() <= 1000;
+    }
+
+    function isValidGuestbook(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.message is string && data.message.size() > 0 && data.message.size() <= 1000 &&
+             data.timestamp is int &&
+             (!('company' in data) || (data.company is string && data.company.size() <= 100));
+    }
+
     // --- MASTER SAFETY NET ---
     match /{document=**} {
       allow read, write: if false;
@@ -112,6 +127,19 @@ service cloud.firestore {
     match /messages/{messageId} {
       allow create: if isValidMessage(incoming());
       allow read, update, delete: if isAdmin();
+    }
+
+    // Security Logs Collection: Submit is public (for locking triggers), read and modify is admin only
+    match /security_logs/{logId} {
+      allow create: if isValidSecurityLog(incoming());
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Guestbook Collection: Create is public, reading is public, editing or deleting is admin only
+    match /guestbook/{entryId} {
+      allow read: if true;
+      allow create: if isValidGuestbook(incoming());
+      allow update, delete: if isAdmin();
     }
 
     // Admin List

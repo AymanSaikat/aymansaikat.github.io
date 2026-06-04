@@ -91,6 +91,32 @@
         "status": { "type": "string", "enum": ["unread", "read", "archived"] }
       },
       "required": ["name", "email", "message", "timestamp"]
+    },
+    "securityLog": {
+      "title": "Security Log",
+      "description": "System administrative audit trail and security events",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "eventType": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "severity": { "type": "string", "enum": ["info", "warning", "success", "critical"] },
+        "summary": { "type": "string" }
+      },
+      "required": ["id", "eventType", "timestamp", "severity", "summary"]
+    },
+    "guestbookEntry": {
+      "title": "Guestbook Entry",
+      "description": "Public message of validation or comment left by visitors",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "company": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "integer" }
+      },
+      "required": ["name", "message", "timestamp"]
     }
   },
   "firestore": {
@@ -117,6 +143,14 @@
     "messages": {
       "schema": "message",
       "description": "Received support or collaboration inquiries"
+    },
+    "security_logs": {
+      "schema": "securityLog",
+      "description": "Real-time security auditing trails"
+    },
+    "guestbook": {
+      "schema": "guestbookEntry",
+      "description": "Persistent public guestbook comment board"
     }
   }
 }

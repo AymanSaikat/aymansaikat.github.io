@@ -300,7 +300,7 @@ export const socialLinks: SocialLink[] = [
   },
   {
     name: "Instagram",
-    href: "https://www.instagram.com/AymanSaikat",
+    href: "https://www.instagram.com/aymansaikat",
     iconName: "Instagram"
   },
   {
@@ -362,7 +362,7 @@ export const projectsData: ProjectItem[] = [
     demoLinkText: "Open Wave App",
     githubLink: "https://github.com/AymanSaikat/whisperingwave",
     githubLinkText: "View GitHub Source",
-    size: "medium",
+    size: "small",
     year: "2025",
     complexity: "Intermediate",
     notes: "An immersive audio exploration tool. Whisperingwave harnesses the HTML5 Web Audio API to process raw audio input into an elegant set of frequencies. It runs high-refresh rendering loops that feed signal waveforms through custom Bezier pathing algorithms, rendering incredibly smooth fluid motion. Beautiful, minimal aesthetics meet low-CPU execution, providing customizable gradient colors and visual speeds.",
@@ -383,7 +383,7 @@ export const projectsData: ProjectItem[] = [
     demoLinkText: "Live Mobile Demo",
     githubLink: "https://github.com/AymanSaikat/Mobile-Bottom-Tab-Bar",
     githubLinkText: "View GitHub Source",
-    size: "small",
+    size: "medium",
     year: "2026",
     complexity: "Medium",
     notes: "A highly engineered asset designed for mobile web traffic. This navigation widget resolves WordPress plugin bloat by offering a clean, plug-and-play UI system. It is written in pure, standards-compliant CSS and JavaScript, taking advantage of CSS Variables for real-time customizable branding, modern flex layouts, safe-area overlay corrections for modern notch/bezel display units, and an exceptionally tiny filesystem footprint.",

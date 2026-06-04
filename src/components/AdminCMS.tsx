@@ -38,12 +38,14 @@ import {
   Download,
   Upload,
   Briefcase,
-  ShieldCheck
+  ShieldCheck,
+  Menu
 } from "lucide-react";
 import { dataService, Profile, ContactMessage } from "../dataService";
+import SystemMonitor from "./SystemMonitor";
 import { isFirebaseConfigured, auth, db } from "../firebase";
 import { signOut, signInAnonymously, sendPasswordResetEmail } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
 import * as OTPAuth from "otpauth";
 
 // Base32 helper verification and standard TOTP generator/verifier
@@ -172,12 +174,55 @@ export default function AdminCMS({ isOpen, onClose, onDataUpdate }: AdminCMSProp
       severity,
       summary
     };
+    
+    // Save to local cache & localStorage as local fallback
     setSecurityLogs(prev => {
-      const updated = [newLog, ...prev].slice(0, 50);
+      const updated = [newLog, ...prev.filter(l => l.id !== newLog.id)].slice(0, 50);
       localStorage.setItem("ayman_portfolio_security_logs", JSON.stringify(updated));
       return updated;
     });
+
+    // Write to Firestore if live connection
+    if (isFirebaseConfigured() && db) {
+      try {
+        setDoc(doc(db, "security_logs", newLog.id), newLog).catch(err => {
+          console.warn("Failed to stream security log to Firestore:", err);
+        });
+      } catch (err) {
+        console.warn("Firestore logging catch error:", err);
+      }
+    }
   };
+
+  // Real-time reactive stream of Firestore security events
+  useEffect(() => {
+    if (!isAuthenticated || !isFirebaseConfigured() || !db) return;
+
+    try {
+      const q = query(
+        collection(db, "security_logs"),
+        orderBy("timestamp", "desc"),
+        limit(50)
+      );
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const logs: SecurityLog[] = [];
+        snapshot.forEach((snapshotDoc) => {
+          logs.push(snapshotDoc.data() as SecurityLog);
+        });
+        if (logs.length > 0) {
+          setSecurityLogs(logs);
+          localStorage.setItem("ayman_portfolio_security_logs", JSON.stringify(logs));
+        }
+      }, (error) => {
+        console.warn("Firestore logs listener denied or failed:", error);
+      });
+
+      return () => unsubscribe();
+    } catch (err) {
+      console.warn("Firestore logs setup error:", err);
+    }
+  }, [isAuthenticated]);
 
   // Inactivity Auto-Logout States
   const [sessionTimeout, setSessionTimeout] = useState(() => {
@@ -306,11 +351,7 @@ export default function AdminCMS({ isOpen, onClose, onDataUpdate }: AdminCMSProp
     return localStorage.getItem("ayman_portfolio_totp_enabled") === "true";
   });
 
-  // Recovery States
-  const [isForgotCodeActive, setIsForgotCodeActive] = useState(false);
-  const [recoveryEmail, setRecoveryEmail] = useState("rimon.newpagla@gmail.com");
-  const [recoverySuccess, setRecoverySuccess] = useState("");
-  const [recoveryError, setRecoveryError] = useState("");
+  // Recovery States (Decommissioned per Security Protocol)
 
   const [settingsVerifyCode, setSettingsVerifyCode] = useState("");
   const [anonymousAuthError, setAnonymousAuthError] = useState(false);
@@ -429,7 +470,8 @@ export default function AdminCMS({ isOpen, onClose, onDataUpdate }: AdminCMSProp
   const [marquee, setMarquee] = useState<string[]>([]);
 
   // CMS Tabs
-  const [activeTab, setActiveTab] = useState<"profile" | "projects" | "skills" | "experience" | "education" | "inbox" | "settings">("profile");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "profile" | "projects" | "skills" | "experience" | "education" | "inbox" | "settings" | "system">("dashboard");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Selected action states / modals
   const [editingProject, setEditingProject] = useState<any | null>(null);
@@ -744,67 +786,7 @@ export default function AdminCMS({ isOpen, onClose, onDataUpdate }: AdminCMSProp
     }
   };
 
-  const handleRecoverCredentials = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setRecoveryError("");
-    setRecoverySuccess("");
 
-    if (!recoveryEmail || !recoveryEmail.includes("@")) {
-      setRecoveryError("Please enter a valid administrative email address.");
-      return;
-    }
-
-    try {
-      if (isFirebaseConfigured() && auth) {
-        // High fidelity implementation: Sends a real recovery/password reset email using Firebase Auth
-        await sendPasswordResetEmail(auth, recoveryEmail);
-      } else {
-        console.warn("Firebase Auth is not fully configured, simulation fallback active.");
-      }
-
-      // To reset the authentication secret for the 2FA system:
-      // We disarm/disable the totp system so they can gain access and reset their settings.
-      setIsTotpEnabled(false);
-      localStorage.setItem("ayman_portfolio_totp_enabled", "false");
-      
-      // Also reset PIN to original template default 'admin'
-      localStorage.setItem("ayman_portfolio_admin_passcode", "admin");
-      setAdminPasscode("admin");
-      setPasscodeInputVal("admin");
-
-      // Reset lockout/attempts
-      setFailedAttempts(0);
-      localStorage.setItem("ayman_portfolio_failed_attempts", "0");
-      localStorage.removeItem("ayman_portfolio_lockout_exp");
-
-      logSecurityEvent(
-        "SECURITY_PROTOCOL_RECOVERED",
-        "critical",
-        `Forgot Code recovery initiated for ${recoveryEmail}. Two-Factor authentication bypassed and disarmed.`
-      );
-
-      setRecoverySuccess(
-        "Recovery email transmitted via Firebase Auth! The 2FA system has been disarmed, and passcode has been reset to default 'admin' for sandbox safety."
-      );
-    } catch (err: any) {
-      console.error("Firebase recovery email dispatch failure:", err);
-      let errMsg = err?.message || "Fault in sending recovery email.";
-      if (err?.code === "auth/unauthorized-continue-uri") {
-        errMsg = "Firebase Auth error: Redirect URI domain is unauthorized.";
-      }
-      setRecoveryError(`${errMsg} (Bypass active: 2FA was temporarily disarmed to PIN 'admin' for recovery safety).`);
-      
-      // We still disarm to prevent permanent sandbox lock
-      setIsTotpEnabled(false);
-      localStorage.setItem("ayman_portfolio_totp_enabled", "false");
-      localStorage.setItem("ayman_portfolio_admin_passcode", "admin");
-      setAdminPasscode("admin");
-      setPasscodeInputVal("admin");
-      setFailedAttempts(0);
-      localStorage.setItem("ayman_portfolio_failed_attempts", "0");
-      localStorage.removeItem("ayman_portfolio_lockout_exp");
-    }
-  };
 
   const handleLogout = async () => {
     if (isFirebaseConfigured() && auth) {
@@ -1240,7 +1222,7 @@ Ayman Saikat`);
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[150] overflow-hidden bg-[#020204]/96 backdrop-blur-xl flex justify-center items-center p-0 md:p-6 select-none font-sans">
+    <div className="fixed inset-0 z-[150] overflow-hidden bg-bg-dark/95 backdrop-blur-xl flex justify-center items-center p-0 md:p-6 select-none font-sans cms-panel-container">
       
       {/* Toast Panel */}
       <AnimatePresence>
@@ -1266,7 +1248,7 @@ Ayman Saikat`);
         <motion.div 
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-sm mx-4 bg-bg-card border border-white/[0.06] rounded-[2px] p-6 text-center shadow-2xl relative overflow-hidden"
+          className="w-full max-w-sm mx-4 bg-bg-card border border-white/[0.06] rounded-[2px] p-6 text-center shadow-2xl relative overflow-hidden cms-modal"
         >
           <div className="absolute right-4 top-4">
             <button 
@@ -1314,81 +1296,6 @@ Ayman Saikat`);
                 </span>
               </div>
             </div>
-          ) : isForgotCodeActive ? (
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-5 py-2 text-center"
-            >
-              <div className="flex justify-center mb-1">
-                <div className="p-3 rounded-full bg-gold/10 border border-gold/25 text-gold animate-pulse">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <h3 className="font-mono text-xs tracking-[0.2em] uppercase text-text-primary font-black">
-                  ADMIN DECRYPT & RECOVERY
-                </h3>
-                <p className="font-mono text-[0.48rem] tracking-widest text-[#8a8a93] uppercase">
-                  Reset local 2FA authentication configurations
-                </p>
-              </div>
-
-              <p className="font-mono text-[0.45rem] text-muted-slate/80 uppercase tracking-widest leading-relaxed">
-                Input your registered administrative email to trigger a verification email and reset system locks to device pincode standards.
-              </p>
-
-              <form onSubmit={handleRecoverCredentials} className="space-y-4 text-left">
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-slate" />
-                    <input 
-                      type="email"
-                      required
-                      placeholder="ENTER REGISTERED EMAIL"
-                      value={recoveryEmail}
-                      onChange={(e) => setRecoveryEmail(e.target.value)}
-                      className="w-full py-2.5 pl-9 pr-4 bg-white/[0.02] border border-white/[0.08] focus:border-gold/40 text-text-primary font-mono text-[0.55rem] tracking-[0.15em] uppercase rounded-[2px] focus:outline-none transition-all duration-300 placeholder:text-muted-slate/30"
-                    />
-                  </div>
-                </div>
-
-                {recoveryError && (
-                  <p className="font-mono text-[0.48rem] text-red-400 uppercase tracking-wider leading-relaxed">
-                    {recoveryError}
-                  </p>
-                )}
-
-                {recoverySuccess && (
-                  <p className="font-mono text-[0.48rem] text-emerald-400 uppercase tracking-wider leading-relaxed">
-                    {recoverySuccess}
-                  </p>
-                )}
-
-                <button 
-                  type="submit"
-                  className="w-full py-2.5 bg-gold hover:bg-gold-light text-bg-dark font-mono text-[0.58rem] tracking-[0.2em] font-black uppercase rounded-[2px] transition-all duration-300 shadow-[0_0_15px_rgba(212,163,89,0.15)] cursor-pointer hover:scale-[1.01]"
-                >
-                  Send Recovery Email
-                </button>
-              </form>
-
-              <div className="pt-2 border-t border-white/[0.03]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsForgotCodeActive(false);
-                    setRecoveryError("");
-                    setRecoverySuccess("");
-                    setAuthError("");
-                  }}
-                  className="font-mono text-[0.42rem] text-muted-slate hover:text-gold uppercase tracking-[0.16em] transition-colors cursor-pointer"
-                >
-                  ← Return to Authentication
-                </button>
-              </div>
-            </motion.div>
           ) : (
             <>
               <div className="flex justify-center mb-4">
@@ -1498,20 +1405,7 @@ Ayman Saikat`);
                 </button>
               </form>
 
-              <div className="flex justify-center pt-1.5 select-none text-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsForgotCodeActive(true);
-                    setAuthError("");
-                    setRecoverySuccess("");
-                    setRecoveryError("");
-                  }}
-                  className="font-mono text-[0.45rem] text-muted-slate/60 hover:text-gold uppercase tracking-[0.16em] transition-colors cursor-pointer"
-                >
-                  Forgot Code?
-                </button>
-              </div>
+
 
               <div className="mt-4 pt-4 border-t border-white/[0.03] text-center">
                 <span className="inline-flex items-center gap-1.5 font-mono text-[0.48rem] text-muted-slate/50 uppercase tracking-widest">
@@ -1527,10 +1421,146 @@ Ayman Saikat`);
         <motion.div 
           initial={{ opacity: 0, scale: 0.99 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-full h-full md:max-w-7xl md:h-[88vh] bg-[#050508] border border-white/[0.06] rounded-none md:rounded-[4px] flex flex-col md:flex-row shadow-[0_0_50px_rgba(0,0,0,0.9)] overflow-hidden"
+          className="w-full h-full md:max-w-7xl md:h-[88vh] bg-bg-dark border border-white/[0.06] rounded-none md:rounded-[4px] flex flex-col md:flex-row shadow-[0_0_50px_rgba(0,0,0,0.9)] overflow-hidden cms-modal relative"
         >
+          {/* MOBILE HEADER BAR */}
+          <div className="md:hidden w-full bg-bg-panel border-b border-white/[0.05] px-4 py-3 flex items-center justify-between shrink-0 relative z-25">
+            <div className="flex items-center gap-2">
+              <Database className="w-4 h-4 text-gold shrink-0 animate-pulse" />
+              <div>
+                <h4 className="font-mono text-[0.62rem] tracking-[0.12em] uppercase text-text-primary font-black">
+                  CMS PANEL
+                </h4>
+                <div className="flex items-center gap-1.5 pt-0.5">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold" />
+                  <span className="block font-mono text-[0.45rem] tracking-widest text-[#8a8a93] uppercase font-bold animate-pulse">
+                    {activeTab === "dashboard" ? "DASHBOARD HUB" : 
+                     activeTab === "profile" ? "SITE PROFILE" :
+                     activeTab === "projects" ? "PROJECTS PORT" :
+                     activeTab === "skills" ? "SKILLS BANK" :
+                     activeTab === "experience" ? "CAREER LOG" :
+                     activeTab === "education" ? "ACADEMICS" :
+                     activeTab === "inbox" ? "INBOX MESSAGES" :
+                     activeTab === "system" ? "SYSTEM MONITOR" :
+                     activeTab === "settings" ? "AI & INTEGRATION" : activeTab.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Launcher toggle button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className={`p-2 border rounded-[2px] font-mono text-[0.5rem] tracking-wider uppercase flex items-center gap-1.5 transition-all duration-300 ${
+                  isMobileMenuOpen 
+                    ? "bg-gold/15 border-gold/45 text-gold" 
+                    : "bg-white/[0.02] border-white/[0.08] text-muted-slate hover:bg-white/[0.04]"
+                }`}
+              >
+                <Menu className="w-4 h-4" />
+                <span className="hidden sm:inline">Modules</span>
+                {messages.filter(m => m.status === "unread").length > 0 && (
+                  <span className="w-1.5 h-1.5 bg-gold rounded-full animate-ping" />
+                )}
+              </button>
+
+              <button 
+                onClick={onClose} 
+                className="p-2 border border-white/[0.08] hover:border-gold/30 text-muted-slate hover:text-gold rounded-[2px] transition-all duration-300"
+                aria-label="Exit CMS dialog"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* MOBILE CONTROLLER LAUNCHER VIEW */}
+          <AnimatePresence>
+            {isMobileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-[49px_0_0_0] z-30 bg-bg-dark/98 backdrop-blur-xl p-4 flex flex-col justify-between overflow-y-auto border-t border-white/[0.04]"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[0.52rem] text-[#8a8a93] tracking-[0.2em] font-bold uppercase">
+                      SELECT SYSTEM CONSOLE PORT
+                    </span>
+                    <span className="font-mono text-[0.45rem] text-muted-slate/50">
+                      LIVE DIRECTORY
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {[
+                      { id: "dashboard", label: "DASHBOARD HUB", icon: LayoutDashboard },
+                      { id: "profile", label: "SITE PROFILE", icon: User },
+                      { id: "projects", label: "PROJECTS PORT", icon: FolderGit2 },
+                      { id: "skills", label: "SKILLS BANK", icon: Award },
+                      { id: "experience", label: "CAREER LOG", icon: Clock },
+                      { id: "education", label: "ACADEMICS", icon: GraduationCap },
+                      { id: "inbox", label: "INBOX MESSAGES", icon: Inbox, count: messages.filter(m => m.status === "unread").length },
+                      { id: "system", label: "SYSTEM MONITOR", icon: ShieldAlert },
+                      { id: "settings", label: "AI & INTEGRATION", icon: Settings }
+                    ].map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeTab === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            setActiveTab(item.id as any);
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className={`flex flex-col items-start gap-2.5 p-3.5 rounded-[3px] border text-left transition-all duration-200 select-none cursor-pointer ${
+                            isActive
+                              ? "bg-gold/15 border-gold/45 text-gold shadow-[0_4px_15px_rgba(212,163,89,0.05)]"
+                              : "bg-white/[0.015] border-white/[0.06] text-muted-slate hover:text-text-primary hover:border-white/10"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <Icon className={`w-4 h-4 ${isActive ? "text-gold" : "text-muted-slate"}`} />
+                            {item.count && item.count > 0 ? (
+                              <span className="px-1.5 py-0.5 bg-gold text-bg-dark rounded-[1.5px] font-black font-mono text-[0.42rem]">
+                                {item.count}
+                              </span>
+                            ) : null}
+                          </div>
+                          <span className="block font-mono text-[0.48rem] tracking-wider uppercase font-extrabold leading-none mt-1">
+                            {item.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-4 border-t border-white/[0.04] flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-mono text-[0.48rem] text-[#8a8a93] uppercase tracking-widest">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                    Online Core
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="p-2 px-3 border border-red-500/10 hover:border-red-500/30 text-red-400 bg-red-950/10 rounded-[1.5px] font-mono text-[0.48rem] uppercase tracking-widest transition-all duration-300 flex items-center gap-1.5"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    Exit Session
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* SIDE RAIL / NAVIGATION */}
-          <div className="w-full md:w-56 border-b md:border-b-0 md:border-r border-white/[0.05] bg-[#030305] p-4 sm:p-5 flex flex-col justify-between shrink-0">
+          <div className="hidden md:flex w-full md:w-56 border-b md:border-b-0 md:border-r border-white/[0.05] bg-bg-panel p-4 sm:p-5 flex-col justify-between shrink-0">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1554,12 +1584,14 @@ Ayman Saikat`);
 
               <div className="space-y-1.5">
                 {[
+                  { id: "dashboard", label: "DASHBOARD HUB", icon: LayoutDashboard },
                   { id: "profile", label: "SITE PROFILE", icon: User },
                   { id: "projects", label: "PROJECTS PORT", icon: FolderGit2 },
                   { id: "skills", label: "SKILLS BANK", icon: Award },
                   { id: "experience", label: "CAREER LOG", icon: Clock },
                   { id: "education", label: "ACADEMICS", icon: GraduationCap },
                   { id: "inbox", label: "INBOX MESSAGES", icon: Inbox, count: messages.filter(m => m.status === "unread").length },
+                  { id: "system", label: "SYSTEM MONITOR", icon: ShieldAlert },
                   { id: "settings", label: "AI & INTEGRATION", icon: Settings }
                 ].map((item) => {
                   const Icon = item.icon;
@@ -1629,7 +1661,7 @@ Ayman Saikat`);
             {/* Bento-Style Telemetry Bar (UX / Visual Identity & Technical Resiliency) */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
               {/* Telemetry 1: DATA CONSTR */}
-              <div className="bg-[#0b0b10] border border-white/[0.04] p-3 rounded-[2px] hover:border-gold/25 transition-all duration-300 relative group overflow-hidden select-none">
+              <div className="bg-bg-panel border border-white/[0.04] p-3 rounded-[2px] hover:border-gold/25 transition-all duration-300 relative group overflow-hidden select-none">
                 <div className="absolute right-2 top-2 opacity-[0.02] group-hover:opacity-5 transition-opacity">
                   <FolderGit2 className="w-12 h-12 text-gold" />
                 </div>
@@ -1654,7 +1686,7 @@ Ayman Saikat`);
               </div>
 
               {/* Telemetry 2: SKILLS TRACKER */}
-              <div className="bg-[#0b0b10] border border-white/[0.04] p-3 rounded-[2px] hover:border-gold/25 transition-all duration-300 relative group overflow-hidden select-none">
+              <div className="bg-bg-panel border border-white/[0.04] p-3 rounded-[2px] hover:border-gold/25 transition-all duration-300 relative group overflow-hidden select-none">
                 <div className="absolute right-2 top-2 opacity-[0.02] group-hover:opacity-5 transition-opacity">
                   <Award className="w-12 h-12 text-gold" />
                 </div>
@@ -1679,7 +1711,7 @@ Ayman Saikat`);
               </div>
 
               {/* Telemetry 3: INBOX TRAFFIC */}
-              <div className="bg-[#0b0b10] border border-white/[0.04] p-3 rounded-[2px] hover:border-gold/25 transition-all duration-300 relative group overflow-hidden select-none">
+              <div className="bg-bg-panel border border-white/[0.04] p-3 rounded-[2px] hover:border-gold/25 transition-all duration-300 relative group overflow-hidden select-none">
                 <div className="absolute right-2 top-2 opacity-[0.02] group-hover:opacity-5 transition-opacity">
                   <Inbox className="w-12 h-12 text-gold" />
                 </div>
@@ -1704,7 +1736,7 @@ Ayman Saikat`);
               </div>
 
               {/* Telemetry 4: FILE SYSTEM / CLOUD SEC */}
-              <div className="bg-[#0b0b10] border border-white/[0.04] p-3 rounded-[2px] hover:border-gold/25 transition-all duration-300 relative group overflow-hidden select-none">
+              <div className="bg-bg-panel border border-white/[0.04] p-3 rounded-[2px] hover:border-gold/25 transition-all duration-300 relative group overflow-hidden select-none">
                 <div className="absolute right-2 top-2 opacity-[0.02] group-hover:opacity-5 transition-opacity">
                   <Cloud className="w-12 h-12 text-gold" />
                 </div>
@@ -1755,6 +1787,185 @@ Ayman Saikat`);
             </div>
 
             {/* TAB PORTALS */}
+            {activeTab === "dashboard" && (
+              <div className="space-y-6">
+                {/* Visual Header Banner */}
+                <div className="p-5 border border-white/[0.05] bg-gradient-to-r from-gold/5 via-transparent to-transparent rounded-[2px] relative overflow-hidden backdrop-blur-md">
+                  <div className="absolute top-0 right-0 p-8 opacity-[0.02]">
+                    <LayoutDashboard className="w-40 h-40 text-gold" />
+                  </div>
+                  <h3 className="font-mono text-xs tracking-[0.2em] text-gold uppercase mb-1 font-black">
+                    SYSTEM EXECUTIVE HOME
+                  </h3>
+                  <p className="font-mono text-[0.52rem] tracking-widest text-[#8a8a93] uppercase max-w-lg leading-relaxed">
+                    Welcome back, administrator. You are currently authenticated. The portfolio firewall is active, and database streams are synchronized.
+                  </p>
+                </div>
+
+                {/* Grid Status Metrics */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Metric 1 */}
+                  <div className="p-4 bg-white/[0.01] border border-white/[0.05] rounded-[2px] space-y-1 hover:border-gold/20 transition-all duration-300">
+                    <span className="block font-mono text-[0.45rem] text-[#8a8a93] uppercase tracking-widest">Total Projects</span>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="font-mono text-xl font-bold text-text-primary">{projects.length}</span>
+                      <span className="font-mono text-[0.42rem] text-[#2de2c4] uppercase">Live</span>
+                    </div>
+                    {/* Tiny visual progress */}
+                    <div className="h-[2px] bg-white/[0.04] rounded-full overflow-hidden w-full mt-1.5">
+                      <div className="h-full bg-gold rounded-full" style={{ width: `${Math.min(100, projects.length * 20)}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Metric 2 */}
+                  <div className="p-4 bg-white/[0.01] border border-white/[0.05] rounded-[2px] space-y-1 hover:border-gold/20 transition-all duration-300">
+                    <span className="block font-mono text-[0.45rem] text-[#8a8a93] uppercase tracking-widest">Skills Bank</span>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="font-mono text-xl font-bold text-text-primary">
+                        {skillCategories.reduce((acc, cat) => acc + (cat.skills?.length || 0), 0)}
+                      </span>
+                      <span className="font-mono text-[0.42rem] text-gold uppercase">{skillCategories.length} Categories</span>
+                    </div>
+                    {/* Tiny visual progress */}
+                    <div className="h-[2px] bg-white/[0.04] rounded-full overflow-hidden w-full mt-1.5">
+                      <div className="h-full bg-indigo-500 rounded-full" style={{ width: "75%" }} />
+                    </div>
+                  </div>
+
+                  {/* Metric 3 */}
+                  <div className="p-4 bg-white/[0.01] border border-white/[0.05] rounded-[2px] space-y-1 hover:border-gold/20 transition-all duration-300">
+                    <span className="block font-mono text-[0.45rem] text-[#8a8a93] uppercase tracking-widest">Inbox Volume</span>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="font-mono text-xl font-bold text-text-primary">{messages.length}</span>
+                      {messages.filter(m => m.status === "unread").length > 0 ? (
+                        <span className="font-mono text-[0.42rem] text-red-00 uppercase animate-pulse text-red-400">
+                          {messages.filter(m => m.status === "unread").length} Unread
+                        </span>
+                      ) : (
+                        <span className="font-mono text-[0.42rem] text-emerald-400 uppercase">Cleared</span>
+                      )}
+                    </div>
+                    {/* Tiny visual progress */}
+                    <div className="h-[2px] bg-white/[0.04] rounded-full overflow-hidden w-full mt-1.5">
+                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${messages.length > 0 ? 100 - (messages.filter(m => m.status === "unread").length / messages.length) * 100 : 100}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Metric 4 */}
+                  <div className="p-4 bg-white/[0.01] border border-white/[0.05] rounded-[2px] space-y-1 hover:border-gold/20 transition-all duration-300">
+                    <span className="block font-mono text-[0.45rem] text-[#8a8a93] uppercase tracking-widest">Security Core</span>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="font-mono text-[0.62rem] font-bold text-emerald-400 uppercase">Firewall Active</span>
+                    </div>
+                    {/* Tiny visual progress */}
+                    <div className="h-[2px] bg-white/[0.04] rounded-full overflow-hidden w-full mt-1.5">
+                      <div className={`h-full rounded-full ${isTotpEnabled ? "bg-emerald-400" : "bg-gold"}`} style={{ width: "100%" }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sub sections */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Progress indices */}
+                  <div className="border border-white/[0.05] bg-white/[0.005] p-5 rounded-[2px] space-y-4">
+                    <div className="flex items-center justify-between border-b border-white/[0.03] pb-2">
+                      <h4 className="font-mono text-[0.6rem] tracking-[0.2em] uppercase text-gold font-bold">PROJECT COMPLETENESS METERS</h4>
+                      <button 
+                        type="button"
+                        onClick={() => setActiveTab("projects")} 
+                        className="font-mono text-[0.45rem] text-[#8a8a93] hover:text-gold transition-colors uppercase tracking-widest cursor-pointer"
+                      >
+                        Manage Projects →
+                      </button>
+                    </div>
+
+                    <div className="space-y-4 max-h-[280px] overflow-y-auto pr-1">
+                      {projects.length === 0 ? (
+                        <div className="text-center py-8 font-mono text-[0.52rem] uppercase tracking-widest text-[#8a8a93]/50">
+                          No active projects found. Create one in Projects Port.
+                        </div>
+                      ) : (
+                        projects.slice(0, 5).map((proj) => {
+                          const pct = proj.completionPercent ?? (proj.size === "large" ? 100 : proj.size === "medium" ? 85 : 70);
+                          return (
+                            <div key={proj.id} className="p-2 border border-white/[0.03] bg-white/[0.005] rounded-[1px] hover:bg-white/[0.015] transition-all flex items-center justify-between gap-4">
+                              <div className="space-y-1 flex-1 min-w-0">
+                                <span className="block font-sans text-xs font-medium text-text-primary tracking-wide truncate">{proj.title}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-[0.45rem] text-[#8a8a93] uppercase tracking-widest bg-white/[0.03] px-1 rounded-[1px]">{proj.category}</span>
+                                  <span className="font-mono text-[0.45rem] text-text-primary font-bold">{pct}%</span>
+                                </div>
+                              </div>
+                              <div className="w-24 shrink-0">
+                                <div className="h-1 bg-white/[0.05] rounded-full overflow-hidden w-full">
+                                  <div 
+                                    className={`h-full rounded-full transition-all duration-500 ${pct >= 100 ? "bg-[#2de2c4]" : pct >= 75 ? "bg-gold" : "bg-indigo-500"}`} 
+                                    style={{ width: `${pct}%` }} 
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Incoming Communicator Inbox */}
+                  <div className="border border-white/[0.05] bg-white/[0.005] p-5 rounded-[2px] space-y-4">
+                    <div className="flex items-center justify-between border-b border-white/[0.03] pb-2">
+                      <h4 className="font-mono text-[0.6rem] tracking-[0.2em] uppercase text-gold font-bold">COMMUNICATOR INBOX INTAKE</h4>
+                      <button 
+                        type="button"
+                        onClick={() => setActiveTab("inbox")} 
+                        className="font-mono text-[0.45rem] text-[#8a8a93] hover:text-gold transition-colors uppercase tracking-widest cursor-pointer"
+                      >
+                        Go To Inbox →
+                      </button>
+                    </div>
+
+                    <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1">
+                      {messages.length === 0 ? (
+                        <div className="text-center py-8 font-mono text-[0.52rem] uppercase tracking-widest text-[#8a8a93]/50">
+                          Your mail inbox queue is empty. No messages received.
+                        </div>
+                      ) : (
+                        messages.slice(0, 4).map((msg) => {
+                          const isUnread = msg.status === "unread";
+                          return (
+                            <button
+                              key={msg.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedMessage(msg);
+                                setActiveTab("inbox");
+                              }}
+                              className={`w-full text-left p-2.5 border border-white/[0.03] hover:border-gold/25 rounded-[1px] bg-white/[0.005] hover:bg-white/[0.015] transition-all duration-200 flex items-center justify-between gap-3 cursor-pointer ${
+                                isUnread ? "border-l-2 border-l-gold bg-gold/[0.01]" : ""
+                              }`}
+                            >
+                              <div className="min-w-0 space-y-0.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-[0.52rem] text-text-primary break-all uppercase tracking-wider font-bold truncate">{msg.name}</span>
+                                  {isUnread && (
+                                    <span className="font-mono text-[0.4rem] bg-gold/10 text-gold border border-gold/20 px-1 py-0.2 uppercase tracking-wide rounded-[1px]">UNREAD</span>
+                                  )}
+                                </div>
+                                <span className="block font-sans text-xs text-[#8a8a93] truncate">{msg.subject}</span>
+                              </div>
+                              <span className="font-mono text-[0.45rem] text-[#8a8a93]/40 tracking-wider font-medium whitespace-nowrap">
+                                {new Date(msg.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                              </span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {activeTab === "profile" && profile && (
               <form onSubmit={handleSaveProfile} className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2038,15 +2249,15 @@ Ayman Saikat`);
 
                 {/* Dynamic Inline Project Editor Modal */}
                 {editingProject && (
-                  <div className="fixed inset-0 z-[160] bg-[#020204]/94 backdrop-blur-md flex items-center justify-center p-4">
-                    <div className="bg-[#08080f] border border-white/[0.08] p-5 rounded-[2px] w-full max-w-xl shadow-2xl space-y-4">
+                  <div className="fixed inset-0 z-[160] bg-bg-dark/95 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-bg-panel border border-white/[0.08] p-5 rounded-[2px] w-full max-w-xl shadow-2xl space-y-4">
                       <div className="flex items-center justify-between">
                         <h4 className="font-mono text-xs text-gold uppercase tracking-[0.16em]">EDIT PROJECT: {editingProject.title}</h4>
                         <button onClick={() => setEditingProject(null)} className="text-muted-slate hover:text-white"><X className="w-4 h-4" /></button>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3 font-mono text-[0.58rem]">
-                        <div className="col-span-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-[0.58rem]">
+                        <div className="sm:col-span-2">
                           <label className="text-muted-slate">TITLE</label>
                           <input type="text" value={editingProject.title} onChange={(e) => setEditingProject({...editingProject, title: e.target.value})} className="w-full p-2 bg-white/[0.02] border border-white/10 text-text-primary rounded-[1px] mt-1 focus:outline-none" />
                         </div>
@@ -2058,7 +2269,7 @@ Ayman Saikat`);
                           <label className="text-muted-slate">COMPLETION %</label>
                           <input type="number" value={editingProject.completionPercent} onChange={(e) => setEditingProject({...editingProject, completionPercent: Number(e.target.value)})} className="w-full p-2 bg-white/[0.02] border border-white/10 text-text-primary rounded-[1px] mt-1 focus:outline-none" />
                         </div>
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
                           <label className="text-muted-slate">DESCRIPTION</label>
                           <textarea rows={3} value={editingProject.description} onChange={(e) => setEditingProject({...editingProject, description: e.target.value})} className="w-full p-2 bg-white/[0.02] border border-white/10 text-text-primary rounded-[1px] mt-1 focus:outline-none resize-none font-sans text-xs" />
                         </div>
@@ -2070,11 +2281,11 @@ Ayman Saikat`);
                           <label className="text-muted-slate">GITHUB URL</label>
                           <input type="text" value={editingProject.githubLink} onChange={(e) => setEditingProject({...editingProject, githubLink: e.target.value})} className="w-full p-2 bg-white/[0.02] border border-white/10 text-text-primary rounded-[1px] mt-1 focus:outline-none" />
                         </div>
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
                           <label className="text-muted-slate">TOOLS (COMMA SEPARATED)</label>
                           <input type="text" value={Array.isArray(editingProject.tools) ? editingProject.tools.join(", ") : editingProject.tools} onChange={(e) => setEditingProject({...editingProject, tools: e.target.value})} className="w-full p-2 bg-white/[0.02] border border-white/10 text-text-primary rounded-[1px] mt-1 focus:outline-none" />
                         </div>
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
                           <label className="text-muted-slate">SCREENSHOTS (COMMA SEPARATED)</label>
                           <input type="text" value={Array.isArray(editingProject.screenshots) ? editingProject.screenshots.join(", ") : editingProject.screenshots} onChange={(e) => setEditingProject({...editingProject, screenshots: e.target.value})} className="w-full p-2 bg-white/[0.02] border border-white/10 text-text-primary rounded-[1px] mt-1 focus:outline-none" />
                         </div>
@@ -2118,7 +2329,7 @@ Ayman Saikat`);
                           placeholder="Laravel"
                           value={newSkillName}
                           onChange={(e) => setNewSkillName(e.target.value)}
-                          className="w-full p-2 bg-[#020203] border border-white/[0.08] text-text-primary font-mono text-xs rounded-[1px] focus:outline-none"
+                          className="w-full p-2 bg-bg-dark border border-white/[0.08] text-text-primary font-mono text-xs rounded-[1px] focus:outline-none"
                         />
                       </div>
 
@@ -2394,9 +2605,9 @@ Ayman Saikat`);
             )}
 
             {activeTab === "inbox" && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 h-[calc(100%-20px)]">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 h-full">
                 {/* Inbox Left list */}
-                <div className="lg:col-span-5 border border-white/[0.05] bg-[#030305] p-3 rounded-[1px] space-y-3 flex flex-col h-[400px] lg:h-full overflow-hidden">
+                <div className={`lg:col-span-5 border border-white/[0.05] bg-bg-panel p-3 rounded-[1px] space-y-3 flex flex-col h-[500px] lg:h-full overflow-hidden ${selectedMessage ? "hidden lg:flex" : "flex"}`}>
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
                     <span className="font-mono text-[0.65rem] tracking-[0.18em] text-[#8a8a93] uppercase font-black">
                       INCOMING INQUIRIES
@@ -2429,7 +2640,7 @@ Ayman Saikat`);
                               ? "bg-gold/10 border-gold/45"
                               : msg.status === "unread"
                               ? "bg-white/[0.03] border-white/[0.09]"
-                              : "bg-[#020202] border-white/[0.03]"
+                              : "bg-bg-dark border-white/[0.03]"
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1">
@@ -2453,10 +2664,18 @@ Ayman Saikat`);
                 </div>
 
                 {/* Inbox Detail Right Side */}
-                <div className="lg:col-span-7 border border-white/[0.05] bg-[#020204]/60 p-4 rounded-[1px] flex flex-col justify-between h-[450px] lg:h-full overflow-hidden">
+                <div className={`lg:col-span-7 border border-white/[0.05] bg-bg-dark/60 p-4 rounded-[1px] flex flex-col justify-between h-[500px] lg:h-full overflow-hidden ${selectedMessage ? "flex" : "hidden lg:flex"}`}>
                   {selectedMessage ? (
                     <div className="flex flex-col h-full justify-between gap-4 overflow-hidden">
                       <div className="space-y-4 overflow-y-auto pr-1 flex-1">
+                        {/* Back button on mobile */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMessage(null)}
+                          className="lg:hidden shrink-0 self-start mb-4 inline-flex items-center gap-1.5 font-mono text-[0.48rem] text-gold uppercase tracking-widest border border-gold/20 px-2.5 py-1 bg-gold/5 rounded-[1px] hover:bg-gold/15 transition-all duration-200 cursor-pointer"
+                        >
+                          ← BACK TO INBOX
+                        </button>
                         {/* Header details */}
                         <div className="border-b border-white/[0.05] pb-3">
                           <div className="flex items-center justify-between mb-2">
@@ -2525,7 +2744,7 @@ Ayman Saikat`);
                       </div>
 
                       {/* Footer Actions */}
-                      <div className="border-t border-white/[0.05] pt-3 flex justify-between items-center bg-[#020204]/90 p-2 rounded-[1.5px]">
+                      <div className="border-t border-white/[0.05] pt-3 flex justify-between items-center bg-bg-dark/90 p-2 rounded-[1.5px]">
                         <div className="flex gap-2">
                           {selectedMessage.status !== "archived" && (
                             <button
@@ -2914,14 +3133,14 @@ Ayman Saikat`);
                     </div>
                   </div>
 
-                  <div className="border border-white/[0.03] bg-black/40 rounded-[2.5px] overflow-hidden max-h-[160px] overflow-y-auto">
+                  <div className="border border-white/[0.03] bg-black/40 rounded-[2.5px] overflow-hidden max-h-[160px] overflow-x-auto overflow-y-auto w-full">
                     <table className="w-full text-left font-mono text-[0.45rem] uppercase tracking-wider relative border-collapse">
                       <thead>
-                        <tr className="bg-[#0e0e0f] text-[#8a8a93]/85 text-[0.40rem]">
-                          <th className="py-2 px-3 sticky top-0 bg-[#0e0e0f] select-none border-b border-white/[0.05]">TIMESTAMP</th>
-                          <th className="py-2 px-3 sticky top-0 bg-[#0e0e0f] select-none border-b border-white/[0.05]">EVENT TYPE</th>
-                          <th className="py-2 px-3 sticky top-0 bg-[#0e0e0f] select-none border-b border-white/[0.05]">SEVERITY</th>
-                          <th className="py-2 px-3 sticky top-0 bg-[#0e0e0f] select-none border-b border-white/[0.05]">SUMMARY DESCRIPTION</th>
+                        <tr className="bg-bg-panel text-[#8a8a93]/85 text-[0.40rem]">
+                          <th className="py-2 px-3 sticky top-0 bg-bg-panel select-none border-b border-white/[0.05]">TIMESTAMP</th>
+                          <th className="py-2 px-3 sticky top-0 bg-bg-panel select-none border-b border-white/[0.05]">EVENT TYPE</th>
+                          <th className="py-2 px-3 sticky top-0 bg-bg-panel select-none border-b border-white/[0.05]">SEVERITY</th>
+                          <th className="py-2 px-3 sticky top-0 bg-bg-panel select-none border-b border-white/[0.05]">SUMMARY DESCRIPTION</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.02]">
@@ -3092,6 +3311,12 @@ Ayman Saikat`);
                     </button>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === "system" && (
+              <div className="w-full">
+                <SystemMonitor isEmbedded={true} />
               </div>
             )}
 

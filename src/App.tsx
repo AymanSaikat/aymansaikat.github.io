@@ -6,6 +6,13 @@ import {
   Github,
   Globe,
   Edit3,
+  Search,
+  Terminal,
+  Shield,
+  MessageSquare,
+  Database,
+  Server,
+  Wifi,
   Facebook,
   Instagram,
   ArrowUpRight,
@@ -166,6 +173,7 @@ export default function App() {
   const [collapsedSkills, setCollapsedSkills] = useState<Record<string, boolean>>({});
   const [isHighLevelOverview, setIsHighLevelOverview] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string>("All");
+  const [projectSearchQuery, setProjectSearchQuery] = useState<string>("");
   const [copiedShare, setCopiedShare] = useState(false);
   const [projectLayoutMode, setProjectLayoutMode] = useState<"bento" | "list">("bento");
 
@@ -723,6 +731,18 @@ export default function App() {
               </motion.a>
             </div>
 
+            {/* ADMIN TERMINAL TRIGGER */}
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => setIsCmsOpen(true)}
+              className="p-2.5 border border-gold/20 dark:border-white/[0.08] rounded-full text-text-primary hover:text-gold bg-bg-card hover:bg-bg-panel dark:bg-white/[0.02] dark:hover:bg-white/[0.06] transition-all duration-300 flex items-center justify-center interactive-cursor select-none focus:outline-none focus:ring-1 focus:ring-gold/30 shadow-sm"
+              title="Open Administrative Terminal"
+              aria-label="Admin Panel"
+            >
+              <Key className="w-4 h-4 text-gold" />
+            </motion.button>
+
             {/* HIGH-CONTRAST LIGHT / DARK MODE TOGGLE */}
             <motion.button
               whileHover={{ scale: 1.08 }}
@@ -864,6 +884,16 @@ export default function App() {
                 >
                   Send Message
                 </a>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsCmsOpen(true);
+                  }}
+                  className="w-full text-center py-3 px-4 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] text-muted-slate hover:text-gold font-mono text-[0.68rem] tracking-widest uppercase font-semibold transition-all duration-300 rounded-[2px] flex items-center justify-center gap-2.5 active:scale-[0.98]"
+                >
+                  <Key className="w-4 h-4 text-gold animate-pulse" />
+                  Admin Terminal
+                </button>
               </motion.div>
             </motion.div>
           </>
@@ -1325,12 +1355,32 @@ export default function App() {
               </div>
             </div>
 
-            {/* Layout Toggle Button */}
-            <div className="flex items-center gap-2 select-none self-start lg:self-center">
-              <span className="font-mono text-[0.55rem] tracking-[0.25em] uppercase text-gold/60 mr-2">
-                LAYOUT:
-              </span>
-              <div className="flex items-center gap-1 bg-[#0b0b12] p-1 border border-white/[0.06] rounded-[2px]">
+            {/* Layout Toggle & Search Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 select-none w-full lg:w-auto">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-slate/50" />
+                <input
+                  type="text"
+                  placeholder="SEARCH PROJECTS..."
+                  value={projectSearchQuery}
+                  onChange={(e) => setProjectSearchQuery(e.target.value)}
+                  className="w-full sm:w-48 pl-9 pr-6 py-2 bg-white/[0.01] hover:bg-white/[0.03] focus:bg-[#0b0b12] border border-white/[0.08] focus:border-gold/30 text-text-primary font-mono text-[0.58rem] tracking-[0.16em] uppercase rounded-[2px] transition-all duration-300 placeholder:text-muted-slate/30 focus:outline-none"
+                />
+                {projectSearchQuery && (
+                  <button
+                    onClick={() => setProjectSearchQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-slate hover:text-gold text-xs"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <span className="font-mono text-[0.55rem] tracking-[0.25em] uppercase text-gold/60 mr-1 whitespace-nowrap">
+                  LAYOUT:
+                </span>
+                <div className="flex items-center gap-1 bg-[#0b0b12] p-1 border border-white/[0.06] rounded-[2px]">
                 <button
                   onClick={() => setProjectLayoutMode("bento")}
                   className={`relative px-3 py-1.5 rounded-[1.5px] transition-all duration-300 interactive-cursor flex items-center gap-1.5 ${
@@ -1357,7 +1407,8 @@ export default function App() {
                 </button>
               </div>
             </div>
-          </motion.div>
+          </div>
+        </motion.div>
 
           {/* Bento Grid */}
           <motion.div
@@ -1375,15 +1426,25 @@ export default function App() {
             <AnimatePresence mode="popLayout">
               {projectsList
                 .filter((p) => selectedFilter === "All" || p.category === selectedFilter)
+                .filter((p) => {
+                  if (!projectSearchQuery) return true;
+                  const query = projectSearchQuery.toLowerCase().trim();
+                  const title = (p.title || "").toLowerCase();
+                  const desc = (p.description || "").toLowerCase();
+                  const cat = (p.category || "").toLowerCase();
+                  const tools = (p.tools || []).join(" ").toLowerCase();
+                  const notes = (p.notes || "").toLowerCase();
+                  return title.includes(query) || desc.includes(query) || cat.includes(query) || tools.includes(query) || notes.includes(query);
+                })
                 .map((project, index) => {
                   let spanClass = "lg:col-span-2 md:col-span-1";
                   if (projectLayoutMode === "bento") {
-                    if (project.size === "large" || project.id === "project-1") {
+                    if (project.size === "large") {
                       spanClass = "lg:col-span-4 md:col-span-2";
-                    } else if (project.size === "medium" || project.id === "project-2") {
-                      spanClass = "lg:col-span-2 md:col-span-1";
-                    } else if (project.size === "small" || project.id === "project-3" || project.id === "project-4") {
+                    } else if (project.size === "medium") {
                       spanClass = "lg:col-span-3 md:col-span-1";
+                    } else if (project.size === "small") {
+                      spanClass = "lg:col-span-2 md:col-span-1";
                     } else {
                       spanClass = "lg:col-span-2 md:col-span-1";
                     }
@@ -1592,7 +1653,7 @@ export default function App() {
           </motion.div>
         </div>
       </section>
- 
+
       {/* CONTACT SECTION */}
       <section
         id="contact"
@@ -1692,6 +1753,8 @@ export default function App() {
                   {[
                     { name: "GitHub", href: profile?.github || "https://github.com/aymansaikat", iconName: "Github" },
                     { name: "LinkedIn", href: profile?.linkedin || "https://linkedin.com/in/aymansaikat", iconName: "Linkedin" },
+                    { name: "Facebook", href: "https://www.facebook.com/AymanSaikat", iconName: "Facebook" },
+                    { name: "Instagram", href: "https://www.instagram.com/aymansaikat", iconName: "Instagram" },
                     { name: "Twitter", href: profile?.twitter || "https://twitter.com/AymanSaikat", iconName: "Twitter" },
                     { name: "Blog", href: profile?.blog || "https://aymansaikat.blogspot.com", iconName: "Edit3" },
                     { name: "Portfolio", href: profile?.portfolio || "https://aymansaikat.github.io", iconName: "Globe" }
@@ -1964,13 +2027,6 @@ export default function App() {
 
           {/* On Desktop: Right-aligned Link */}
           <div className="hidden md:flex items-center gap-4">
-            <button
-              onClick={() => setIsCmsOpen(true)}
-              className="font-mono text-[0.55rem] tracking-[0.15em] text-gold hover:text-white uppercase transition-colors duration-300 interactive-cursor flex items-center gap-1 bg-transparent border-none appearance-none outline-none select-none cursor-pointer"
-            >
-              <Key className="w-3.5 h-3.5 text-gold" />
-              <span>Admin Panel</span>
-            </button>
             <div className="font-mono text-[0.55rem] tracking-[0.15em] text-muted-slate/80 hover:text-gold uppercase transition-colors duration-300 whitespace-nowrap">
               aymansaikat.github.io
             </div>
@@ -1981,13 +2037,6 @@ export default function App() {
             <span className="uppercase select-none">
               © {new Date().getFullYear()} Ayman Saikat
             </span>
-            <span className="text-white/10 select-none">•</span>
-            <button
-              onClick={() => setIsCmsOpen(true)}
-              className="text-gold uppercase font-bold tracking-[0.12em] select-none"
-            >
-              Control Panel
-            </button>
             <span className="text-white/10 select-none">•</span>
             <span className="text-muted-slate/80 active:text-gold uppercase transition-colors duration-300">
               aymansaikat.github.io

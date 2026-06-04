@@ -104,13 +104,12 @@ export default function ParticleBackground() {
       if (!entries || entries.length === 0) return;
       const { width: entryWidth, height: entryHeight } = entries[0].contentRect;
 
-      width = canvas.width = entryWidth;
-      height = canvas.height = entryHeight;
-
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
+        width = canvas.width = entryWidth;
+        height = canvas.height = entryHeight;
         initParticles(width, height);
-      }, 100);
+      }, 150);
     });
 
     resizeObserver.observe(container);
