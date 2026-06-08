@@ -67,6 +67,8 @@ export interface ProjectItem {
   notes?: string;
   screenshots?: string[];
   completionPercent?: number;
+  beforeImage?: string;
+  afterImage?: string;
 }
 
 export interface TestimonialItem {
@@ -76,6 +78,14 @@ export interface TestimonialItem {
   organization: string;
 }
 
+export interface GuestbookEntry {
+  id: string;
+  name: string;
+  company: string;
+  message: string;
+  timestamp: number;
+}
+
 export const navLinks: NavLink[] = [
   { label: "About", href: "#about" },
   { label: "Skills", href: "#skills" },
@@ -83,6 +93,37 @@ export const navLinks: NavLink[] = [
   { label: "Experience", href: "#experience" },
   { label: "Education", href: "#education" },
   { label: "Contact", href: "#contact" }
+];
+
+export const defaultGuestbookEntries: GuestbookEntry[] = [
+  {
+    id: "gb-1",
+    name: "Kabir Alamgest",
+    company: "Bangladesh Election Commission, Savar Node",
+    message: "Rimon executed biometric fingerprint and iris capture operations with 100% database accuracy. His data integrity checking workflow is highly precise and professional.",
+    timestamp: 1748962400000
+  },
+  {
+    id: "gb-2",
+    name: "Fahim Chowdhury",
+    company: "ST Group Corporate Operations",
+    message: "He is our lead administrator for corporate websites. Rimon configured and optimized our primary ST Group landing portals, trimming page load speed issues by 40% using modern asset pipelines.",
+    timestamp: 1754048800000
+  },
+  {
+    id: "gb-3",
+    name: "Sufian Razdar",
+    company: "News Tv Bangla, Media Hub",
+    message: "Rimon stabilized our live broadcasting lower-third transitions and news production queues. Extremely proactive with Adobe Premiere audio tracks and responsive video exports.",
+    timestamp: 1746284000000
+  },
+  {
+    id: "gb-4",
+    name: "Tariqul Islam",
+    company: "RAJUK Urban Development Project Office",
+    message: "Rimon single-handedly processed and validated high-volume project files. His cataloging speed and data entry fidelity were instrumental in archiving land documentation archives.",
+    timestamp: 1741100000000
+  }
 ];
 
 export const marqueeItems: string[] = [
@@ -414,5 +455,23 @@ export const projectsData: ProjectItem[] = [
       "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80"
     ],
     completionPercent: 95
+  },
+  {
+    id: "project-5",
+    title: "ST Group Corporate Portal Redesign",
+    category: "UI/UX Overhaul",
+    description: "A custom responsive redesign and modernization of ST Group's primary web portal, upgrading legacy architectures to a lightweight, responsive Dark UI theme that optimized speed by 40% and user retention by 25%.",
+    tools: ["WordPress", "Figma", "Tailwind CSS", "Core Web Vitals"],
+    size: "large",
+    year: "2026",
+    complexity: "Premium UX",
+    notes: "Replaced an outdated, slow legacy table-based structure with a fully responsive layout. Implemented custom fluid typography, localized asset optimization processes, and optimized SVGs for instant load times across various browsers. Features a live Before/After design comparison directly below so stakeholders can evaluate visual changes in high fidelity.",
+    screenshots: [
+      "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80"
+    ],
+    beforeImage: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=1200&q=80",
+    afterImage: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1200&q=80",
+    completionPercent: 100
   }
 ];

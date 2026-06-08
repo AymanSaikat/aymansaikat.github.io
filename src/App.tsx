@@ -65,6 +65,10 @@ import ProjectCard from "./components/ProjectCard";
 import TiltCard from "./components/TiltCard";
 import { dataService } from "./dataService";
 import AdminCMS from "./components/AdminCMS";
+import BeforeAfterSlider from "./components/BeforeAfterSlider";
+import AIPortfolioRaphael from "./components/AIPortfolioRaphael";
+import SystemMonitor from "./components/SystemMonitor";
+import GuestbookLedger from "./components/GuestbookLedger";
 
 export default function App() {
   const [theme, setTheme] = useState<"dark" | "light">(() => {
@@ -88,7 +92,7 @@ export default function App() {
 
   // Dynamic Datasets backed by CMS & LocalStorage
   const [profile, setProfile] = useState<any>({
-    name: "Ayman Saikat",
+    name: "Rimon Ahmed",
     title: "System Support Co-Ordinator / Web Administrator",
     bio: "Highly organized and tech-savvy professional with professional experience in system administration, WordPress management, video editing, and graphic design. Adept at maintaining web infrastructures, executing digital marketing campaigns, and managing large-scale database operations with high precision.",
     email: "dev.rimonahmed@gmail.com",
@@ -224,6 +228,106 @@ export default function App() {
     }
   }, [activeProject]);
 
+  // Real-time Network Connectivity Monitor State & Toasts
+  const [isOnline, setIsOnline] = useState(() => {
+    if (typeof window !== "undefined" && typeof navigator !== "undefined") {
+      return navigator.onLine;
+    }
+    return true;
+  });
+  const [showNetworkToast, setShowNetworkToast] = useState(false);
+  const [networkToastType, setNetworkToastType] = useState<"online" | "offline">("online");
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      setNetworkToastType("online");
+      setShowNetworkToast(true);
+      setTimeout(() => setShowNetworkToast(false), 4000);
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      setNetworkToastType("offline");
+      setShowNetworkToast(true);
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // SEO & UX: Dynamic Page Title updating depending on navigation spy
+  useEffect(() => {
+    const sectionNames: Record<string, string> = {
+      hero: "Systems & Support Core",
+      about: "Executive Dossier",
+      skills: "Capabilities Index",
+      projects: "Project Stack Matrix",
+      experience: "Career Timeline",
+      education: "Educational Background",
+      contact: "Direct Secure Channel",
+    };
+
+    const currentSubtitle = sectionNames[activeSection] || "Portfolio Systems";
+    document.title = `${profile.name} | ${currentSubtitle}`;
+  }, [activeSection, profile.name]);
+
+  // SEO Schema Integration: Dynamic JSON-LD structured data injection inside head
+  useEffect(() => {
+    let scriptTag = document.getElementById("ayman-seo-schema") as HTMLScriptElement;
+    if (!scriptTag) {
+      scriptTag = document.createElement("script");
+      scriptTag.id = "ayman-seo-schema";
+      scriptTag.type = "application/ld+json";
+      document.head.appendChild(scriptTag);
+    }
+
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": profile.name || "Md. Rimon Ahmed",
+      "alternateName": "Ayman Saikat",
+      "jobTitle": profile.title || "System Support Co-Ordinator / Web Administrator",
+      "description": profile.bio || "Systems Specialist & Web Administrator",
+      "email": profile.email || "dev.rimonahmed@gmail.com",
+      "url": profile.portfolio || "https://aymansaikat.github.io",
+      "location": {
+        "@type": "Place",
+        "name": profile.location || "Savar, Dhaka, Bangladesh"
+      },
+      "alumniOf": {
+        "@type": "EducationalOrganization",
+        "name": "Savar Govt. University College (National University)"
+      },
+      "worksFor": {
+        "@type": "Organization",
+        "name": "ST Group",
+        "sameAs": "https://facebook.com/AymanSaikat"
+      },
+      "sameAs": [
+        profile.github || "https://github.com/aymansaikat",
+        profile.linkedin || "https://linkedin.com/in/aymansaikat",
+        "https://www.facebook.com/AymanSaikat",
+        "https://www.instagram.com/aymansaikat",
+        "https://aymansaikat.blogspot.com"
+      ]
+    };
+
+    scriptTag.textContent = JSON.stringify(structuredData, null, 2);
+
+    return () => {
+      const existing = document.getElementById("ayman-seo-schema");
+      if (existing) {
+        existing.remove();
+      }
+    };
+  }, [profile]);
+
   const handleShareProject = (projectId: string) => {
     const shareUrl = `${window.location.origin}${window.location.pathname}?project=${projectId}`;
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -312,7 +416,7 @@ export default function App() {
             setScrollProgress(window.scrollY / totalScroll);
           }
 
-          // Simple active link spy including Projects
+          // Simple active link spy
           const sections = ["hero", "about", "skills", "projects", "experience", "education", "contact"];
           const scrollPosition = window.scrollY + 200;
 
@@ -476,7 +580,7 @@ export default function App() {
               <span className="w-1.5 h-1.5 rounded-full bg-gold animate-ping" />
             </div>
             <span className="text-[0.55rem] tracking-[0.25em] text-[#8a8a93] uppercase font-bold">
-              AYMAN S. CORE ARCHITECT
+              RIMON A. CORE ARCHITECT
             </span>
           </div>
           <div className="text-[0.52rem] text-muted-slate/75 uppercase tracking-widest flex items-center gap-1.5">
@@ -531,7 +635,7 @@ export default function App() {
 
         {/* Global Footer bypass portal */}
         <div className="w-full max-w-7xl mx-auto flex items-center justify-between z-10 border-t border-white/[0.04] pt-4 text-[0.48rem] text-muted-slate/40 uppercase tracking-widest font-mono">
-          <span>© 2026 AYMAN Saikat. ALL SECURED.</span>
+          <span>© 2026 Rimon Ahmed. ALL SECURED.</span>
           <button 
             onClick={() => setIsCmsOpen(true)}
             className="p-1 px-2 border border-white/[0.03] hover:border-gold/30 hover:bg-gold/5 bg-transparent rounded-[1px] transition-all flex items-center gap-1 cursor-pointer hover:text-gold uppercase tracking-[0.16em] group"
@@ -736,7 +840,7 @@ export default function App() {
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.92 }}
               onClick={() => setIsCmsOpen(true)}
-              className="p-2.5 border border-gold/20 dark:border-white/[0.08] rounded-full text-text-primary hover:text-gold bg-bg-card hover:bg-bg-panel dark:bg-white/[0.02] dark:hover:bg-white/[0.06] transition-all duration-300 flex items-center justify-center interactive-cursor select-none focus:outline-none focus:ring-1 focus:ring-gold/30 shadow-sm"
+              className="w-11 h-11 border border-gold/20 dark:border-white/[0.08] rounded-full text-text-primary hover:text-gold bg-bg-card hover:bg-bg-panel dark:bg-white/[0.02] dark:hover:bg-white/[0.06] transition-all duration-300 flex items-center justify-center interactive-cursor select-none focus:outline-none focus:ring-1 focus:ring-gold/30 shadow-sm shrink-0"
               title="Open Administrative Terminal"
               aria-label="Admin Panel"
             >
@@ -748,7 +852,7 @@ export default function App() {
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.92 }}
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="p-2.5 border border-gold/20 dark:border-white/[0.08] rounded-full text-text-primary hover:text-gold bg-bg-card hover:bg-bg-panel dark:bg-white/[0.02] dark:hover:bg-white/[0.06] transition-all duration-300 flex items-center justify-center interactive-cursor select-none focus:outline-none focus:ring-1 focus:ring-gold/30 shadow-sm"
+              className="w-11 h-11 border border-gold/20 dark:border-white/[0.08] rounded-full text-text-primary hover:text-gold bg-bg-card hover:bg-bg-panel dark:bg-white/[0.02] dark:hover:bg-white/[0.06] transition-all duration-300 flex items-center justify-center interactive-cursor select-none focus:outline-none focus:ring-1 focus:ring-gold/30 shadow-sm shrink-0"
               title={`Switch to ${theme === "dark" ? "High-Contrast Light" : "Dark"} Mode`}
               aria-label="Toggle Theme"
             >
@@ -770,11 +874,11 @@ export default function App() {
               </AnimatePresence>
             </motion.button>
 
-            {/* Mobile Menu Icon with responsive micro scaling */}
+            {/* Mobile Menu Icon with responsive micro scaling and guaranteed >=44px touch target */}
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden text-muted-slate hover:text-gold p-1.5 focus:outline-none transition-colors interactive-cursor z-50 ml-1"
+              className="lg:hidden text-muted-slate hover:text-gold w-11 h-11 flex items-center justify-center focus:outline-none transition-colors interactive-cursor z-50 ml-1 shrink-0"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -839,7 +943,7 @@ export default function App() {
                       <a
                         href={link.href}
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-baseline gap-4 group transition-all duration-300 relative py-1`}
+                        className="flex items-center min-h-[44px] py-3 gap-4 group transition-all duration-300 relative w-full"
                       >
                         {/* Elegant Index Prefix Counter */}
                         <span className={`font-mono text-[0.62rem] tracking-widest ${isActive ? "text-gold" : "text-muted-slate/50 group-hover:text-gold/60"} transition-colors duration-300`}>
@@ -872,7 +976,7 @@ export default function App() {
                     setMobileMenuOpen(false);
                     setIsCvModalOpen(true);
                   }}
-                  className="w-full text-center py-3 px-4 bg-bg-card hover:bg-bg-panel dark:bg-white/[0.02] dark:hover:bg-white/[0.06] border border-gold/25 dark:border-white/[0.08] text-gold hover:text-gold-light font-mono text-[0.68rem] tracking-widest uppercase font-semibold transition-all duration-300 rounded-[2px] flex items-center justify-center gap-2.5 shadow-sm active:scale-[0.98]"
+                  className="w-full text-center min-h-[44px] py-3 px-4 bg-bg-card hover:bg-bg-panel dark:bg-white/[0.02] dark:hover:bg-white/[0.06] border border-gold/25 dark:border-white/[0.08] text-gold hover:text-gold-light font-mono text-[0.68rem] tracking-widest uppercase font-semibold transition-all duration-300 rounded-[2px] flex items-center justify-center gap-2.5 shadow-sm active:scale-[0.98]"
                 >
                   <FileText className="w-4 h-4" />
                   Download CV
@@ -880,7 +984,7 @@ export default function App() {
                 <a
                   href="#contact"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-3 px-4 bg-gold hover:bg-gold-light text-bg-dark font-mono text-[0.68rem] tracking-widest uppercase font-semibold active:scale-[0.98] transition-all duration-300 rounded-[2px] flex items-center justify-center gap-2.5 shadow-[0_4px_12px_rgba(212,175,55,0.15)]"
+                  className="w-full text-center min-h-[44px] py-3 px-4 bg-gold hover:bg-gold-light text-bg-dark font-mono text-[0.68rem] tracking-widest uppercase font-semibold active:scale-[0.98] transition-all duration-300 rounded-[2px] flex items-center justify-center gap-2.5 shadow-[0_4px_12px_rgba(212,175,55,0.15)]"
                 >
                   Send Message
                 </a>
@@ -889,7 +993,7 @@ export default function App() {
                     setMobileMenuOpen(false);
                     setIsCmsOpen(true);
                   }}
-                  className="w-full text-center py-3 px-4 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] text-muted-slate hover:text-gold font-mono text-[0.68rem] tracking-widest uppercase font-semibold transition-all duration-300 rounded-[2px] flex items-center justify-center gap-2.5 active:scale-[0.98]"
+                  className="w-full text-center min-h-[44px] py-3 px-4 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] text-muted-slate hover:text-gold font-mono text-[0.68rem] tracking-widest uppercase font-semibold transition-all duration-300 rounded-[2px] flex items-center justify-center gap-2.5 active:scale-[0.98]"
                 >
                   <Key className="w-4 h-4 text-gold animate-pulse" />
                   Admin Terminal
@@ -955,14 +1059,14 @@ export default function App() {
               <div className="flex flex-wrap gap-4">
                 <a
                   href="#experience"
-                  className="inline-flex items-center gap-2 bg-gold hover:bg-gold-light text-bg-dark py-3.5 px-7 rounded-[2px] font-mono text-[0.68rem] tracking-widest font-semibold uppercase transition-all duration-300 hover:translate-y-[-2px] border border-gold hover:border-gold-light shadow-lg shadow-gold/10 interactive-cursor"
+                  className="inline-flex items-center gap-2 bg-gold hover:bg-gold-light text-bg-dark py-3.5 px-6 rounded-[2px] font-mono text-[0.68rem] tracking-widest font-semibold uppercase transition-all duration-300 hover:translate-y-[-2px] border border-gold hover:border-gold-light shadow-lg shadow-gold/10 interactive-cursor"
                 >
                   View Experience
                   <ArrowDown className="w-3.5 h-3.5" />
                 </a>
                 <a
                   href="#contact"
-                  className="inline-flex items-center gap-2 bg-transparent hover:bg-white/[0.03] text-muted-lavender hover:text-text-primary py-3.5 px-7 rounded-[2px] font-mono text-[0.68rem] tracking-widest uppercase transition-all duration-300 border border-white/[0.08] hover:border-gold/20 interactive-cursor"
+                  className="inline-flex items-center gap-2 bg-transparent hover:bg-white/[0.03] text-muted-lavender hover:text-text-primary py-3.5 px-6 rounded-[2px] font-mono text-[0.68rem] tracking-widest uppercase transition-all duration-300 border border-white/[0.08] hover:border-gold/20 interactive-cursor shrink-0"
                 >
                   Get In Touch
                   <ArrowUpRight className="w-3.5 h-3.5" />
@@ -1476,6 +1580,8 @@ export default function App() {
         </div>
       </section>
 
+      {/* SYSTEMS TELEMETRY CONTROL CENTRE AND GUESTBOOK MOVED TO CMS SECURE ACCESS AND REMOVED FROM LANDING PAGE BY USER REQUEST */}
+
       {/* EXPERIENCE SECTION */}
       <section id="experience" className="bg-bg-panel/95 relative z-20">
         <div className="max-w-7xl mx-auto px-6 md:px-16 py-24 lg:py-32">
@@ -1490,7 +1596,7 @@ export default function App() {
             <div className="flex items-center gap-3 mb-3">
               <div className="w-6 h-[1.5px] bg-gold" />
               <span className="font-mono text-[0.6rem] tracking-[0.25em] uppercase text-gold">
-                04 — Career Journey
+                05 — Career Journey
               </span>
             </div>
             <h2 className="font-display text-5xl md:text-7xl lg:text-8xl leading-none">
@@ -1590,7 +1696,7 @@ export default function App() {
             <div className="flex items-center gap-3 mb-3">
               <div className="w-6 h-[1.5px] bg-gold" />
               <span className="font-mono text-[0.6rem] tracking-[0.25em] uppercase text-gold">
-                05 — Academic Profile
+                06 — Academic Profile
               </span>
             </div>
             <h2 className="font-display text-5xl md:text-7xl lg:text-8xl leading-none">
@@ -1672,7 +1778,7 @@ export default function App() {
           <div className="text-center max-w-4xl mx-auto mb-16">
             <motion.div variants={fadeUpTransition} className="flex justify-center items-center gap-3 mb-6">
               <span className="font-mono text-[0.62rem] tracking-[0.3em] uppercase text-gold">
-                06 — Let's connect
+                07 — Let's connect
               </span>
             </motion.div>
    
@@ -2014,7 +2120,7 @@ export default function App() {
           
           {/* On Desktop: Left-aligned Copyright */}
           <div className="hidden md:block font-mono text-[0.55rem] tracking-[0.15em] text-muted-slate uppercase select-none">
-            © {new Date().getFullYear()} Ayman Saikat
+            © {new Date().getFullYear()} Rimon Ahmed
           </div>
 
           {/* Clock: Always centered and readable */}
@@ -2035,7 +2141,7 @@ export default function App() {
           {/* On Mobile/Tablet: A beautiful single line pairing Copyright & Link with a dot separator, fitting without any horizontal scroll */}
           <div className="md:hidden flex items-center justify-center gap-x-2.5 gap-y-1 flex-wrap font-mono text-[0.52rem] tracking-[0.12em] text-muted-slate w-full px-2 mt-1">
             <span className="uppercase select-none">
-              © {new Date().getFullYear()} Ayman Saikat
+              © {new Date().getFullYear()} Rimon Ahmed
             </span>
             <span className="text-white/10 select-none">•</span>
             <span className="text-muted-slate/80 active:text-gold uppercase transition-colors duration-300">
@@ -2256,88 +2362,97 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Product Screenshots Slider */}
-              {activeProject.screenshots && activeProject.screenshots.length > 0 && (
-                <div className="relative border border-white/[0.08] bg-black/40 overflow-hidden group/slider mb-6 aspect-video rounded-[3px] select-none shadow-2xl">
-                  {/* Aspect-video slider image viewport */}
-                  <AnimatePresence mode="wait">
-                    <motion.img
-                      key={activeImageIndex}
-                      src={activeProject.screenshots[activeImageIndex]}
-                      alt={`${activeProject.title} screenshot ${activeImageIndex + 1}`}
-                      referrerPolicy="no-referrer"
-                      initial={{ opacity: 0, scale: 1.02 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.98 }}
-                      transition={{ duration: 0.25 }}
-                      onClick={() => setIsLightboxOpen(true)}
-                      className="object-cover w-full h-full cursor-zoom-in transition-all duration-500"
-                    />
-                  </AnimatePresence>
+              {/* Product Screenshots Slider / Comparison Slider */}
+              {activeProject.beforeImage && activeProject.afterImage ? (
+                <div className="mb-6">
+                  <BeforeAfterSlider 
+                    beforeImage={activeProject.beforeImage} 
+                    afterImage={activeProject.afterImage} 
+                  />
+                </div>
+              ) : (
+                activeProject.screenshots && activeProject.screenshots.length > 0 && (
+                  <div className="relative border border-white/[0.08] bg-black/40 overflow-hidden group/slider mb-6 aspect-video rounded-[3px] select-none shadow-2xl">
+                    {/* Aspect-video slider image viewport */}
+                    <AnimatePresence mode="wait">
+                      <motion.img
+                        key={activeImageIndex}
+                        src={activeProject.screenshots[activeImageIndex]}
+                        alt={`${activeProject.title} screenshot ${activeImageIndex + 1}`}
+                        referrerPolicy="no-referrer"
+                        initial={{ opacity: 0, scale: 1.02 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ duration: 0.25 }}
+                        onClick={() => setIsLightboxOpen(true)}
+                        className="object-cover w-full h-full cursor-zoom-in transition-all duration-500"
+                      />
+                    </AnimatePresence>
 
-                  {/* Floating Zoom Action Overlay */}
-                  <div 
-                    onClick={() => setIsLightboxOpen(true)}
-                    className="absolute inset-0 bg-[#020204]/30 opacity-0 group-hover/slider:opacity-100 transition-opacity duration-300 z-10 flex items-center justify-center cursor-zoom-in"
-                  >
-                    <div className="bg-[#050508]/95 border border-gold/40 px-4 py-2.5 rounded-[2px] font-mono text-[0.58rem] tracking-[0.22em] text-gold uppercase flex items-center gap-2 shadow-2xl backdrop-blur-sm transform translate-y-2 group-hover/slider:translate-y-0 transition-all duration-300">
-                      <ZoomIn className="w-3.5 h-3.5" />
-                      <span>Click to view Full-Screen (Lightbox)</span>
+                    {/* Floating Zoom Action Overlay */}
+                    <div 
+                      onClick={() => setIsLightboxOpen(true)}
+                      className="absolute inset-0 bg-[#020204]/30 opacity-0 group-hover/slider:opacity-100 transition-opacity duration-300 z-10 flex items-center justify-center cursor-zoom-in"
+                    >
+                      <div className="bg-[#050508]/95 border border-gold/40 px-4 py-2.5 rounded-[2px] font-mono text-[0.58rem] tracking-[0.22em] text-gold uppercase flex items-center gap-2 shadow-2xl backdrop-blur-sm transform translate-y-2 group-hover/slider:translate-y-0 transition-all duration-300">
+                        <ZoomIn className="w-3.5 h-3.5" />
+                        <span>Click to view Full-Screen (Lightbox)</span>
+                      </div>
+                    </div>
+
+                    {/* Gradient bottom overlay for dot contrast */}
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 to-transparent pointer-events-none z-10" />
+
+                    {/* Dynamic Screenshot Indicator Tag */}
+                    <div className="absolute top-4 left-4 font-mono text-[0.52rem] tracking-widest text-[#a0a0ab]/80 bg-black/75 backdrop-blur-md px-2.5 py-1 border border-white/5 uppercase z-15">
+                      FRAME_DUMP::{activeProject.id}_0{activeImageIndex + 1}
+                    </div>
+
+                    {/* Slide controls: Top-right indicator count */}
+                    <div className="absolute top-4 right-4 font-mono text-[0.52rem] tracking-[0.2em] text-[#a0a0ab] bg-black/75 backdrop-blur-md px-2.5 py-1 border border-white/5 rounded-[1px] select-none z-15">
+                      {activeImageIndex + 1} / {activeProject.screenshots.length}
+                    </div>
+
+                    {/* Side Controls Overlay (Interactive hover) */}
+                    <button
+                      onClick={() =>
+                        setActiveImageIndex((prev) =>
+                          prev === 0 ? activeProject.screenshots!.length - 1 : prev - 1
+                        )
+                      }
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/50 hover:bg-gold/80 border border-white/5 text-[#a0a0ab] hover:text-bg-dark rounded-full transition-all duration-300 opacity-0 group-hover/slider:opacity-100 z-20 interactive-cursor"
+                      aria-label="Previous slide"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        setActiveImageIndex((prev) =>
+                          prev === activeProject.screenshots!.length - 1 ? 0 : prev + 1
+                        )
+                      }
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/50 hover:bg-gold/80 border border-white/5 text-[#a0a0ab] hover:text-bg-dark rounded-full transition-all duration-300 opacity-0 group-hover/slider:opacity-100 z-20 interactive-cursor"
+                      aria-label="Next slide"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+
+                    {/* Dot-indicator Slider bar */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full border border-white/5">
+                      {activeProject.screenshots.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setActiveImageIndex(idx)}
+                          className={`w-1.5 h-1.5 rounded-full transition-all duration-300 interactive-cursor ${
+                            activeImageIndex === idx ? "bg-gold w-4" : "bg-[#8a8a93]/40 hover:bg-gold/60"
+                          }`}
+                          aria-label={`Go to slide ${idx + 1}`}
+                        />
+                      ))}
                     </div>
                   </div>
-
-                  {/* Gradient bottom overlay for dot contrast */}
-                  <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 to-transparent pointer-events-none z-10" />
-
-                  {/* Dynamic Screenshot Indicator Tag */}
-                  <div className="absolute top-4 left-4 font-mono text-[0.52rem] tracking-widest text-[#a0a0ab]/80 bg-black/75 backdrop-blur-md px-2.5 py-1 border border-white/5 uppercase z-15">
-                    FRAME_DUMP::{activeProject.id}_0{activeImageIndex + 1}
-                  </div>
-
-                  {/* Slide controls: Top-right indicator count */}
-                  <div className="absolute top-4 right-4 font-mono text-[0.52rem] tracking-[0.2em] text-[#a0a0ab] bg-black/75 backdrop-blur-md px-2.5 py-1 border border-white/5 rounded-[1px] select-none z-15">
-                    {activeImageIndex + 1} / {activeProject.screenshots.length}
-                  </div>
-
-                  {/* Side Controls Overlay (Interactive hover) */}
-                  <button
-                    onClick={() =>
-                      setActiveImageIndex((prev) =>
-                        prev === 0 ? activeProject.screenshots!.length - 1 : prev - 1
-                      )
-                    }
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/50 hover:bg-gold/80 border border-white/5 text-[#a0a0ab] hover:text-bg-dark rounded-full transition-all duration-300 opacity-0 group-hover/slider:opacity-100 z-20 interactive-cursor"
-                    aria-label="Previous slide"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      setActiveImageIndex((prev) =>
-                        prev === activeProject.screenshots!.length - 1 ? 0 : prev + 1
-                      )
-                    }
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/50 hover:bg-gold/80 border border-white/5 text-[#a0a0ab] hover:text-bg-dark rounded-full transition-all duration-300 opacity-0 group-hover/slider:opacity-100 z-20 interactive-cursor"
-                    aria-label="Next slide"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-
-                  {/* Dot-indicator Slider bar */}
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full border border-white/5">
-                    {activeProject.screenshots.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setActiveImageIndex(idx)}
-                        className={`w-1.5 h-1.5 rounded-full transition-all duration-300 interactive-cursor ${
-                          activeImageIndex === idx ? "bg-gold w-4" : "bg-[#8a8a93]/40 hover:bg-gold/60"
-                        }`}
-                        aria-label={`Go to slide ${idx + 1}`}
-                      />
-                    ))}
-                  </div>
-                </div>
+                )
               )}
 
               {/* Overview Tab Content */}
@@ -2562,7 +2677,7 @@ export default function App() {
             whileTap={{ scale: 0.95 }}
             transition={{ type: "spring", stiffness: 350, damping: 20 }}
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="fixed bottom-8 right-8 sm:bottom-10 sm:right-10 z-[120] p-3 bg-bg-card border border-white/[0.08] hover:border-gold/70 text-muted-slate hover:text-gold rounded-full shadow-[0_0_20px_rgba(0,0,0,0.6)] hover:shadow-[0_0_20px_rgba(212,175,55,0.25)] transition-all duration-300 interactive-cursor flex items-center justify-center font-bold group"
+            className="fixed bottom-[84px] right-6 sm:bottom-[92px] sm:right-8 z-[120] p-3 bg-bg-card border border-white/[0.08] hover:border-gold/70 text-muted-slate hover:text-gold rounded-full shadow-[0_0_20px_rgba(0,0,0,0.6)] hover:shadow-[0_0_20px_rgba(212,175,55,0.25)] transition-all duration-300 interactive-cursor flex items-center justify-center font-bold group"
             title="Scroll to Top"
             aria-label="Scroll to Top"
           >
@@ -2570,6 +2685,67 @@ export default function App() {
           </motion.button>
         )}
       </AnimatePresence>
+
+      {/* REAL-TIME NETWORK INTEGRITY TOAST */}
+      <AnimatePresence>
+        {showNetworkToast && (
+          <motion.div
+            initial={{ opacity: 0, x: -30, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -30, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className={`fixed bottom-6 left-6 z-[120] max-w-xs font-mono text-[0.62rem] p-4 border rounded-[2px] shadow-2xl overflow-hidden backdrop-blur-md flex items-center gap-3.5 select-none ${
+              networkToastType === "online"
+                ? "bg-[#0b0c10]/95 border-emerald-500/35 text-text-primary shadow-emerald-500/5"
+                : "bg-[#0f0a0d]/95 border-red-500/35 text-text-primary shadow-red-500/5"
+            }`}
+          >
+            {/* Pulsing state light */}
+            <div className="relative flex items-center justify-center w-3 h-3 shrink-0">
+              <span className={`absolute w-full h-full rounded-full animate-ping opacity-60 ${
+                networkToastType === "online" ? "bg-emerald-400" : "bg-red-400"
+              }`} />
+              <span className={`w-2 h-2 rounded-full ${
+                networkToastType === "online" ? "bg-emerald-500" : "bg-red-500"
+              }`} />
+            </div>
+
+            {/* Content text */}
+            <div className="flex-grow space-y-0.5 text-left">
+              <div className="flex items-center gap-2">
+                <span className={`font-black uppercase tracking-wider text-[0.58rem] ${
+                  networkToastType === "online" ? "text-emerald-400" : "text-red-400"
+                }`}>
+                  {networkToastType === "online" ? "SYS_PEER_STABLE" : "SYS_PEER_DISCONNECTED"}
+                </span>
+                <span className="text-[#a0a0ab]/40 text-[0.42rem] font-bold tracking-widest">// NET_PORT_3000</span>
+              </div>
+              <p className="text-muted-lavender text-[0.55rem] uppercase leading-relaxed font-sans">
+                {networkToastType === "online"
+                  ? "Secure systems endpoint synchronized. Cache sync OK."
+                  : "Sync thread disconnected. Direct offline cached database active."}
+              </p>
+            </div>
+
+            {/* Manual Dismiss button */}
+            <button
+              onClick={() => setShowNetworkToast(false)}
+              className="p-1 hover:bg-white/5 rounded-full transition-colors leading-none cursor-pointer text-[#a0a0ab]/40 hover:text-white shrink-0 ml-1"
+              aria-label="Dismiss network indicator alert"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* AI SYSTEMS CORE PORTFOLIO RAPHAEL */}
+      <AIPortfolioRaphael
+        profile={profile}
+        projectsList={projectsList || []}
+        skillsList={skillsList || []}
+        experienceList={experienceList || []}
+      />
       </div>
 
       {/* ───────────── PRINT ONLY RESUME SHEET ───────────── */}

@@ -1,30 +1,50 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap');
 @import "tailwindcss";
 
+:root {
+  --bg-dark: #050508;
+  --bg-panel: #08080d;
+  --bg-card: #0d0d14;
+  --text-primary: #f0eeea;
+  --muted-slate: #706e82;
+  --muted-lavender: #9490a8;
+  --border-default: rgba(255, 255, 255, 0.08);
+}
+
+.light {
+  --bg-dark: #fbfbfa;
+  --bg-panel: #ffffff;
+  --bg-card: #ffffff;
+  --text-primary: #121214;
+  --muted-slate: #52505c;
+  --muted-lavender: #312f38;
+  --border-default: rgba(18, 18, 20, 0.09);
+}
+
 @theme {
   --font-display: "Bebas Neue", sans-serif;
   --font-serif: "Cormorant Garamond", serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  --color-bg-dark: #050508;
-  --color-bg-panel: #08080d;
-  --color-bg-card: #0d0d14;
+  --color-bg-dark: var(--bg-dark);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-card: var(--bg-card);
   --color-gold: #c8a96e;
   --color-gold-light: #e8c98e;
   --color-accent-teal: #2de2c4;
   --color-accent-red: #e84545;
-  --color-text-primary: #f0eeea;
-  --color-muted-slate: #706e82;
-  --color-muted-lavender: #9490a8;
+  --color-text-primary: var(--text-primary);
+  --color-muted-slate: var(--muted-slate);
+  --color-muted-lavender: var(--muted-lavender);
   
-  --border-color-default: rgba(255, 255, 255, 0.08);
+  --border-color-default: var(--border-default);
 }
 
 @layer utilities {
   /* Scroll behavior */
   html {
     scroll-behavior: smooth;
-    background: #050508;
+    background: var(--bg-dark);
   }
 
   /* Custom Scrollbar */
@@ -32,7 +52,7 @@
     width: 3px;
   }
   ::-webkit-scrollbar-track {
-    background: #050508;
+    background: var(--bg-dark);
   }
   ::-webkit-scrollbar-thumb {
     background: #c8a96e;

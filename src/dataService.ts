@@ -24,8 +24,12 @@ import {
   socialLinks as defaultSocialLinks,
   stats as defaultStats,
   languages as defaultLanguages,
-  marqueeItems as defaultMarquee
+  marqueeItems as defaultMarquee,
+  defaultGuestbookEntries as defaultGuestbook,
+  GuestbookEntry
 } from "./data";
+
+export type { GuestbookEntry };
 
 export interface ContactMessage {
   id: string;
@@ -61,12 +65,13 @@ const STORAGE_KEYS = {
   MESSAGES: "ayman_portfolio_messages",
   STATS: "ayman_portfolio_stats",
   LANGUAGES: "ayman_portfolio_languages",
-  MARQUEE: "ayman_portfolio_marquee"
+  MARQUEE: "ayman_portfolio_marquee",
+  GUESTBOOK: "ayman_portfolio_guestbook"
 };
 
 // Initial Profile setup mirroring App.tsx defaults
 const initialProfile: Profile = {
-  name: "Ayman Saikat",
+  name: "Rimon Ahmed",
   title: "System Support Co-Ordinator / Web Administrator",
   bio: "Highly organized and tech-savvy professional with professional experience in system administration, WordPress management, video editing, and graphic design. Adept at maintaining web infrastructures, executing digital marketing campaigns, and managing large-scale database operations with high precision.",
   email: "dev.rimonahmed@gmail.com",
@@ -87,7 +92,16 @@ export const dataService = {
       try {
         const snap = await getDoc(doc(db, "profile", "main"));
         if (snap.exists()) {
-          return snap.data() as Profile;
+          const data = snap.data() as Profile;
+          if (data && (data.name === "Ayman Saikat" || !data.name)) {
+            data.name = "Rimon Ahmed";
+            try {
+              await setDoc(doc(db, "profile", "main"), { ...data, name: "Rimon Ahmed" }, { merge: true });
+            } catch (saveErr) {
+              console.warn("Autoupgraded profile migration fail:", saveErr);
+            }
+          }
+          return data;
         } else {
           const email = auth?.currentUser?.email;
           const isAdmin = email && (email === "rimon.newpagla@gmail.com" || email === "dev.rimonahmed@gmail.com");
@@ -107,7 +121,14 @@ export const dataService = {
       }
     }
     const local = localStorage.getItem(STORAGE_KEYS.PROFILE);
-    if (local) return JSON.parse(local);
+    if (local) {
+      const parsed = JSON.parse(local);
+      if (parsed.name === "Ayman Saikat" || !parsed.name) {
+        parsed.name = "Rimon Ahmed";
+        localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(parsed));
+      }
+      return parsed;
+    }
     localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(initialProfile));
     return initialProfile;
   },
@@ -460,5 +481,72 @@ export const dataService = {
     const messages = await this.getMessages();
     const filtered = messages.filter(m => m.id !== id);
     localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(filtered));
+  },
+
+  // ─── GUESTBOOK / PEER LEDGER ───
+  async getGuestbook(): Promise<GuestbookEntry[]> {
+    if (isFirebaseConfigured() && db) {
+      try {
+        const snap = await getDocs(collection(db, "guestbook"));
+        if (!snap.empty) {
+          return snap.docs.map(doc => ({ ...doc.data(), id: doc.id }) as GuestbookEntry)
+            .sort((a, b) => b.timestamp - a.timestamp);
+        } else {
+          const email = auth?.currentUser?.email;
+          const isAdmin = email && (email === "rimon.newpagla@gmail.com" || email === "dev.rimonahmed@gmail.com");
+          if (isAdmin) {
+            try {
+              for (const entry of defaultGuestbook) {
+                await setDoc(doc(db, "guestbook", entry.id), entry);
+              }
+            } catch (seedErr) {
+              console.warn("Failed to seed guestbook:", seedErr);
+            }
+          }
+          return defaultGuestbook.sort((a, b) => b.timestamp - a.timestamp);
+        }
+      } catch (err) {
+        try {
+          handleFirestoreError(err, OperationType.LIST, "guestbook");
+        } catch {}
+      }
+    }
+    const local = localStorage.getItem(STORAGE_KEYS.GUESTBOOK);
+    if (local) {
+      return JSON.parse(local).sort((a: any, b: any) => b.timestamp - a.timestamp);
+    }
+    localStorage.setItem(STORAGE_KEYS.GUESTBOOK, JSON.stringify(defaultGuestbook));
+    return defaultGuestbook.sort((a, b) => b.timestamp - a.timestamp);
+  },
+
+  async addGuestbookEntry(entry: Omit<GuestbookEntry, "id">): Promise<void> {
+    const id = "gb-" + Date.now();
+    const newEntry: GuestbookEntry = { ...entry, id };
+
+    if (isFirebaseConfigured() && db) {
+      try {
+        await setDoc(doc(db, "guestbook", id), newEntry);
+        return;
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, `guestbook/${id}`);
+      }
+    }
+    const entries = await this.getGuestbook();
+    entries.unshift(newEntry);
+    localStorage.setItem(STORAGE_KEYS.GUESTBOOK, JSON.stringify(entries));
+  },
+
+  async deleteGuestbookEntry(id: string): Promise<void> {
+    if (isFirebaseConfigured() && db) {
+      try {
+        await deleteDoc(doc(db, "guestbook", id));
+        return;
+      } catch (err) {
+        handleFirestoreError(err, OperationType.DELETE, `guestbook/${id}`);
+      }
+    }
+    const entries = await this.getGuestbook();
+    const filtered = entries.filter(e => e.id !== id);
+    localStorage.setItem(STORAGE_KEYS.GUESTBOOK, JSON.stringify(filtered));
   }
 };

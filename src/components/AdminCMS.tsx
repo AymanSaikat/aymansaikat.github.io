@@ -39,9 +39,10 @@ import {
   Upload,
   Briefcase,
   ShieldCheck,
-  Menu
+  Menu,
+  Fingerprint
 } from "lucide-react";
-import { dataService, Profile, ContactMessage } from "../dataService";
+import { dataService, Profile, ContactMessage, GuestbookEntry } from "../dataService";
 import SystemMonitor from "./SystemMonitor";
 import { isFirebaseConfigured, auth, db } from "../firebase";
 import { signOut, signInAnonymously, sendPasswordResetEmail } from "firebase/auth";
@@ -466,11 +467,12 @@ export default function AdminCMS({ isOpen, onClose, onDataUpdate }: AdminCMSProp
   const [experiences, setExperiences] = useState<any[]>([]);
   const [education, setEducation] = useState<any[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [guestbook, setGuestbook] = useState<GuestbookEntry[]>([]);
   const [stats, setStats] = useState<any[]>([]);
   const [marquee, setMarquee] = useState<string[]>([]);
 
   // CMS Tabs
-  const [activeTab, setActiveTab] = useState<"dashboard" | "profile" | "projects" | "skills" | "experience" | "education" | "inbox" | "settings" | "system">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "profile" | "projects" | "skills" | "experience" | "education" | "inbox" | "settings" | "system" | "guestbook">("dashboard");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Selected action states / modals
@@ -523,6 +525,7 @@ export default function AdminCMS({ isOpen, onClose, onDataUpdate }: AdminCMSProp
       const uMessages = await dataService.getMessages();
       const uStats = await dataService.getStats();
       const uMarquee = await dataService.getMarquee();
+      const uGuestbook = await dataService.getGuestbook();
 
       setProfile(uProfile);
       setProjects(uProjects);
@@ -532,6 +535,7 @@ export default function AdminCMS({ isOpen, onClose, onDataUpdate }: AdminCMSProp
       setMessages(uMessages);
       setStats(uStats);
       setMarquee(uMarquee);
+      setGuestbook(uGuestbook);
     } catch (err) {
       console.error("CMS failed to read system models:", err);
     }
@@ -847,6 +851,8 @@ export default function AdminCMS({ isOpen, onClose, onDataUpdate }: AdminCMSProp
     complexity: "",
     notes: "",
     screenshots: "",
+    beforeImage: "",
+    afterImage: "",
     completionPercent: 100
   });
 
@@ -893,6 +899,8 @@ export default function AdminCMS({ isOpen, onClose, onDataUpdate }: AdminCMSProp
         complexity: "Intermediate",
         notes: "",
         screenshots: "",
+        beforeImage: "",
+        afterImage: "",
         completionPercent: 100
       });
       onDataUpdate();
@@ -1134,6 +1142,18 @@ export default function AdminCMS({ isOpen, onClose, onDataUpdate }: AdminCMSProp
     }
   };
 
+  const handleDeleteGuestbookEntry = async (id: string) => {
+    if (!window.confirm("Permanently delete/moderate this ledger signature record?")) return;
+    try {
+      await dataService.deleteGuestbookEntry(id);
+      setGuestbook(guestbook.filter(g => g.id !== id));
+      logSecurityEvent("LEDGER_ENTRY_DELETED", "warning", `Guestbook signature block ${id} moderated and purged.`);
+      showToast("Ledger signature deleted successfully.", "success");
+    } catch (err) {
+      showToast("Purging ledger block faulted.", "error");
+    }
+  };
+
   // ─── GEMINI AI EMAIL DRAFT GENERATOR ───
   const handleGenerateAiReply = async () => {
     if (!selectedMessage) return;
@@ -1141,14 +1161,27 @@ export default function AdminCMS({ isOpen, onClose, onDataUpdate }: AdminCMSProp
     setAiDraftReply("");
 
     try {
-      // Import SDK dynamically as requested to reduce first load
-      const { GoogleGenAI } = await import("@google/genai");
+      const response = await fetch("/api/gemini/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messageContext: selectedMessage.message,
+          senderName: selectedMessage.name,
+          senderEmail: selectedMessage.email,
+          subject: selectedMessage.subject,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.text) {
+          setAiDraftReply(data.text);
+          showToast("Gemini AI draft successfully compiled.", "success");
+          return;
+        }
+      }
       
-      const keyToUse = geminiApiKey || process.env.GEMINI_API_KEY || "";
-      if (!keyToUse) {
-        // Fallback to static smart template is highly robust and beautiful if no key is loaded yet
-        setIsAiGenerating(false);
-        const autoTemplate = `Dear ${selectedMessage.name},
+      const autoTemplate = `Dear ${selectedMessage.name},
 
 Thank you very much for reaching out regarding "${selectedMessage.subject || "Collaboration opportunity"}".
 
@@ -1157,49 +1190,14 @@ I have parsed your inquiry log: "${selectedMessage.message}" and would love to c
 Could we schedule a brief correspondence this week?
 
 Kindest Regards,
-Ayman Saikat
+Rimon Ahmed
 System Support Co-Ordinator
 ${profile?.email || "dev.rimonahmed@gmail.com"}`;
-        setAiDraftReply(autoTemplate);
-        showToast("Dynamic Smart Template generated (Add your Gemini API Key in Settings for live AI).", "success");
-        return;
-      }
-
-      const ai = new GoogleGenAI({ apiKey: keyToUse });
-      const promptText = `
-        You are Ayman Saikat, a professional System Support Co-Ordinator and Web Administrator.
-        Here is your profile information: 
-        Name: ${profile?.name}
-        Title: ${profile?.title}
-        Bio: ${profile?.bio}
-        Email: ${profile?.email}
-        Location: ${profile?.location}
-
-        You received an inquiry message on your personal portfolio website with the following details:
-        Sender Name: ${selectedMessage.name}
-        Sender Email: ${selectedMessage.email}
-        Subject: ${selectedMessage.subject || "Inquiry/Contact Request"}
-        Message: "${selectedMessage.message}"
-
-        Write a professional, sleek, and highly contextual email response addressing the sender's inquiry. Make sure the tone matches the elegant "Cosmic Slate" standard of your website. Keep it polite, scannable, and direct. Standard signature included.
-      `;
-
-      // Use modern Gemini 2.5 flash as optimal model
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: promptText,
-      });
-
-      if (response && response.text) {
-        setAiDraftReply(response.text);
-        showToast("Gemini AI draft successfully compiled.", "success");
-      } else {
-        throw new Error("Empty model response.");
-      }
+      setAiDraftReply(autoTemplate);
+      showToast("Dynamic Smart Template generated.", "success");
     } catch (err: any) {
       console.error("AI client error:", err);
-      showToast("AI synthesis faulted. Reverted to smart draft.", "error");
-      // Fallback
+      showToast("AI synthesis defaulted. Reverted to smart draft.", "error");
       setAiDraftReply(`Dear ${selectedMessage.name},
 
 Thank you for your contact message. I received your inquiry: "${selectedMessage.message}".
@@ -1207,7 +1205,7 @@ Thank you for your contact message. I received your inquiry: "${selectedMessage.
 I will review the requirements and contact you via SMTP route: ${selectedMessage.email} shortly.
 
 Best Regards,
-Ayman Saikat`);
+Rimon Ahmed`);
     } finally {
       setIsAiGenerating(false);
     }
@@ -1504,6 +1502,7 @@ Ayman Saikat`);
                       { id: "experience", label: "CAREER LOG", icon: Clock },
                       { id: "education", label: "ACADEMICS", icon: GraduationCap },
                       { id: "inbox", label: "INBOX MESSAGES", icon: Inbox, count: messages.filter(m => m.status === "unread").length },
+                      { id: "guestbook", label: "PEER LEDGER", icon: Fingerprint },
                       { id: "system", label: "SYSTEM MONITOR", icon: ShieldAlert },
                       { id: "settings", label: "AI & INTEGRATION", icon: Settings }
                     ].map((item) => {
@@ -1591,6 +1590,7 @@ Ayman Saikat`);
                   { id: "experience", label: "CAREER LOG", icon: Clock },
                   { id: "education", label: "ACADEMICS", icon: GraduationCap },
                   { id: "inbox", label: "INBOX MESSAGES", icon: Inbox, count: messages.filter(m => m.status === "unread").length },
+                  { id: "guestbook", label: "PEER LEDGER", icon: Fingerprint },
                   { id: "system", label: "SYSTEM MONITOR", icon: ShieldAlert },
                   { id: "settings", label: "AI & INTEGRATION", icon: Settings }
                 ].map((item) => {
@@ -2199,6 +2199,26 @@ Ayman Saikat`);
                           className="w-full p-2 bg-white/[0.01] border border-white/[0.08] text-text-primary font-mono text-xs rounded-[1px] focus:outline-none"
                         />
                       </div>
+                      <div className="sm:col-span-3 space-y-1">
+                        <label className="block font-mono text-[0.45rem] text-[#8a8a93] uppercase tracking-widest">BEFORE REVISION IMAGE (FOR INTERACTIVE REDESIGN COMPARISON)</label>
+                        <input 
+                          type="text"
+                          placeholder="https://images.unsplash.com/before_design.jpg"
+                          value={newProject.beforeImage}
+                          onChange={(e) => setNewProject({ ...newProject, beforeImage: e.target.value })}
+                          className="w-full p-2 bg-white/[0.01] border border-white/[0.08] text-text-primary font-mono text-xs rounded-[1px] focus:outline-none"
+                        />
+                      </div>
+                      <div className="sm:col-span-3 space-y-1">
+                        <label className="block font-mono text-[0.45rem] text-[#8a8a93] uppercase tracking-widest">AFTER REVISION IMAGE (FOR INTERACTIVE REDESIGN COMPARISON)</label>
+                        <input 
+                          type="text"
+                          placeholder="https://images.unsplash.com/after_design.jpg"
+                          value={newProject.afterImage}
+                          onChange={(e) => setNewProject({ ...newProject, afterImage: e.target.value })}
+                          className="w-full p-2 bg-white/[0.01] border border-white/[0.08] text-text-primary font-mono text-xs rounded-[1px] focus:outline-none"
+                        />
+                      </div>
                     </div>
 
                     <div className="flex justify-end pt-2">
@@ -2288,6 +2308,14 @@ Ayman Saikat`);
                         <div className="sm:col-span-2">
                           <label className="text-muted-slate">SCREENSHOTS (COMMA SEPARATED)</label>
                           <input type="text" value={Array.isArray(editingProject.screenshots) ? editingProject.screenshots.join(", ") : editingProject.screenshots} onChange={(e) => setEditingProject({...editingProject, screenshots: e.target.value})} className="w-full p-2 bg-white/[0.02] border border-white/10 text-text-primary rounded-[1px] mt-1 focus:outline-none" />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="text-muted-slate">BEFORE REVISION IMAGE (URL)</label>
+                          <input type="text" value={editingProject.beforeImage || ""} onChange={(e) => setEditingProject({...editingProject, beforeImage: e.target.value})} className="w-full p-2 bg-white/[0.02] border border-white/10 text-text-primary rounded-[1px] mt-1 focus:outline-none" />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="text-muted-slate">AFTER REVISION IMAGE (URL)</label>
+                          <input type="text" value={editingProject.afterImage || ""} onChange={(e) => setEditingProject({...editingProject, afterImage: e.target.value})} className="w-full p-2 bg-white/[0.02] border border-white/10 text-text-primary rounded-[1px] mt-1 focus:outline-none" />
                         </div>
                       </div>
 
@@ -3317,6 +3345,100 @@ Ayman Saikat`);
             {activeTab === "system" && (
               <div className="w-full">
                 <SystemMonitor isEmbedded={true} />
+              </div>
+            )}
+
+            {activeTab === "guestbook" && (
+              <div className="space-y-6 text-left">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/[0.04] pb-4">
+                  <div>
+                    <h3 className="font-sans font-bold text-lg text-text-primary">
+                      Verified Peer Ledger Signatures
+                    </h3>
+                    <p className="text-xs text-muted-slate font-sans mt-0.5">
+                      Monitor, verify, or purge physical visitor signature block records from the ayman-core platform ledger.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-[0.62rem] font-mono uppercase bg-gold/5 border border-gold/15 p-2 rounded-[2px] text-gold">
+                    <Fingerprint className="w-4 h-4 shrink-0 animate-pulse" />
+                    <span>LEDGER INTEGRITY: SIGNED</span>
+                  </div>
+                </div>
+
+                {guestbook.length === 0 ? (
+                  <div className="py-24 text-center border border-dashed border-white/10 rounded-[2px] bg-[#0c0d12]">
+                    <Fingerprint className="w-12 h-12 text-white/10 mx-auto mb-3" />
+                    <p className="font-mono text-xs uppercase text-muted-slate">
+                      Zero Signed Blocks found in database
+                    </p>
+                    <p className="text-white/20 text-[0.68rem] font-sans mt-1">
+                      Signatures will populate here as soon as clients transact their signature block.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="border border-white/[0.04] rounded-[2px] bg-[#0c0d12] overflow-hidden">
+                    <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
+                      <table className="w-full font-sans text-xs text-left border-collapse">
+                        <thead>
+                          <tr className="bg-[#141520] border-b border-white/[0.04] font-mono text-[0.55rem] uppercase text-[#8a8a93] tracking-widest">
+                            <th className="p-4 font-bold select-none">Block Num</th>
+                            <th className="p-4 font-bold">Signatory Identity</th>
+                            <th className="p-4 font-bold">Message Content</th>
+                            <th className="p-4 font-bold">Timestamp</th>
+                            <th className="p-4 text-center font-bold">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.02]">
+                          {guestbook.map((entry, index) => {
+                            const blockNum = guestbook.length - index;
+                            const fauxHash = `SHA256://STG-F${Math.abs(entry.id.split("").reduce((a, b) => (a << 5) - a + b.charCodeAt(0), 0)).toString(16).toUpperCase().padStart(8, "0")}E1489D`;
+                            return (
+                              <tr key={entry.id} className="hover:bg-[#1a1c29]/30 transition-colors">
+                                <td className="p-4 font-mono text-[0.6rem] text-gold whitespace-nowrap">
+                                  REG_BLOCK_0{blockNum}
+                                </td>
+                                <td className="p-4 whitespace-nowrap">
+                                  <div className="font-bold text-text-primary leading-tight">
+                                    {entry.name}
+                                  </div>
+                                  <div className="font-mono text-[0.55rem] text-muted-slate mt-0.5 uppercase">
+                                    {entry.company || "Independent"}
+                                  </div>
+                                </td>
+                                <td className="p-4 max-w-sm">
+                                  <p className="leading-relaxed text-muted-lavender">
+                                    "{entry.message}"
+                                  </p>
+                                  <span className="block font-mono text-[0.48rem] text-[#8a8a93]/30 mt-1 select-all hover:text-gold cursor-copy transition-colors">
+                                    {fauxHash}
+                                  </span>
+                                </td>
+                                <td className="p-4 whitespace-nowrap font-mono text-[0.55rem] text-[#8a8a93] uppercase">
+                                  {new Date(entry.timestamp).toLocaleDateString(undefined, {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit"
+                                  })}
+                                </td>
+                                <td className="p-4 whitespace-nowrap text-center">
+                                  <button
+                                    onClick={() => handleDeleteGuestbookEntry(entry.id)}
+                                    className="px-3 py-1.5 border border-red-500/10 hover:border-red-500/25 bg-red-500/5 hover:bg-red-500/15 text-red-400 hover:text-red-300 rounded-[2px] transition-all font-mono text-[0.52rem] uppercase cursor-pointer"
+                                    title="Mod and purge block"
+                                  >
+                                    PURGE BLOCK
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

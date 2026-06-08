@@ -12,7 +12,14 @@ import {
   Sparkles,
   Search,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Fingerprint,
+  ShieldCheck,
+  Lock,
+  Unlock,
+  FileText,
+  Check,
+  Loader2
 } from "lucide-react";
 import { isFirebaseConfigured, db } from "../firebase";
 import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
@@ -24,7 +31,79 @@ interface LineItem {
 }
 
 export default function SystemMonitor({ isEmbedded = false }: { isEmbedded?: boolean }) {
-  const [activeTab, setActiveTab] = useState<"hud" | "console" | "firewall">("hud");
+  const [activeTab, setActiveTab] = useState<"hud" | "console" | "firewall" | "vault">("hud");
+  
+  // Biometric Vault States
+  const [scanState, setScanState] = useState<"idle" | "scanning" | "complete">("idle");
+  const [scanPercent, setScanPercent] = useState(0);
+  const [scanPhaseText, setScanPhaseText] = useState("");
+  const [showIdentityDoc, setShowIdentityDoc] = useState(false);
+  const [verificationLogs, setVerificationLogs] = useState<string[]>([]);
+  const [activeToken, setActiveToken] = useState("");
+
+  // Periodically generate secure multifactor tokens
+  useEffect(() => {
+    const generateToken = () => {
+      const code = Math.floor(100000 + Math.random() * 90000).toString();
+      setActiveToken(code);
+    };
+    generateToken();
+    const tokenInterval = setInterval(generateToken, 30000);
+    return () => clearInterval(tokenInterval);
+  }, []);
+
+  const triggerBiometricScan = () => {
+    if (scanState === "scanning") return;
+    setScanState("scanning");
+    setScanPercent(0);
+    setScanPhaseText("Establishing secure optical interface...");
+    setShowIdentityDoc(false);
+    setVerificationLogs([
+      "SECURE CORE LINK: Initialized.",
+      "ENCRYPTION KEY: Rotated // Level-4 authorization."
+    ]);
+
+    let val = 0;
+    const interval = setInterval(() => {
+      val += Math.floor(Math.random() * 12) + 5;
+      if (val >= 100) {
+        val = 100;
+        setScanPercent(100);
+        setScanPhaseText("IDENTITY MATCH VERIFIED // DIRECTORY DECRYPTED");
+        setScanState("complete");
+        setShowIdentityDoc(true);
+        setVerificationLogs(prev => [
+          ...prev,
+          "BDEC SYSTEM INVENTORY: Records retrieved successfully.",
+          "MFA INTEGRITY MATRIX: Token match OK."
+        ]);
+        clearInterval(interval);
+      } else {
+        setScanPercent(val);
+        if (val < 25) {
+          setScanPhaseText("Capturing and rendering retina coordinate grid...");
+          if (val === 12 || val === 15 || val === 18) {
+            setVerificationLogs(prev => [...prev, "SCANNING: Ocular retina data received."]);
+          }
+        } else if (val < 50) {
+          setScanPhaseText("Analyzing finger print ridge metrics...");
+          if (val === 36 || val === 42) {
+            setVerificationLogs(prev => [...prev, "PROBING: Fingerprint minutiae matched."]);
+          }
+        } else if (val < 75) {
+          setScanPhaseText("Querying Bangladesh Election Commission NID cluster...");
+          if (val === 60 || val === 64) {
+            setVerificationLogs(prev => [...prev, "QUERYING: NID Database Savar-Node record search."]);
+          }
+        } else {
+          setScanPhaseText("decrypting metadata payload layer...");
+          if (val === 88 || val === 92) {
+            setVerificationLogs(prev => [...prev, "DECRYPTING: Credentials dossier loaded."]);
+          }
+        }
+      }
+    }, 120);
+  };
   
   // Real database latency counter vs simulated pings
   const [dbLatency, setDbLatency] = useState<number>(14);
@@ -139,7 +218,56 @@ export default function SystemMonitor({ isEmbedded = false }: { isEmbedded?: boo
 
     switch (primaryCmd) {
       case "help":
-        reply = "Available system utilities:\n- help : Audit commands and tools\n- cat bio : View professional systems coordinate bio\n- ping : Run live latency handshake checks\n- lsof : List active service stacks\n- projects : Audit portfolio records index\n- skills : Audit verified capability tags\n- system : Print system health stats\n- clear : Flush terminal stdout";
+        reply = "Available system utilities:\n" +
+                "- help        : Audit commands and tools\n" +
+                "- neofetch    : Output detailed system stats summary with ASCII avatar\n" +
+                "- cat bio     : View professional systems coordinate bio\n" +
+                "- ping        : Run live latency handshake checks\n" +
+                "- lsof        : List active service stacks\n" +
+                "- projects    : Audit portfolio records index\n" +
+                "- skills      : Audit verified capability tags\n" +
+                "- system      : Print system health stats\n" +
+                "- speedtest   : Run active SEO and site speed diagnostics benchmark\n" +
+                "- totp        : Output Google Authenticator token status\n" +
+                "- biometrics  : Initiate security biometrics verification gate\n" +
+                "- clear       : Flush terminal stdout";
+        break;
+      case "neofetch":
+        reply = "    .-/++++/-.       ayman@saikat-core\n" +
+                "   /++++++++++\\      -----------------\n" +
+                "  .++++++++++++.     OS: Ayman Security Support OS v4.2.1\n" +
+                "  .++++++++++++.     Kernel: React 18 / Vite 6.0\n" +
+                "   +__________+      Uptime: " + systemUptime + "\n" +
+                "   |          |      Shell: bash / interactive-web-sh\n" +
+                "   |  R A     |      Resolution: " + (typeof window !== "undefined" ? `${window.screen.width}x${window.screen.height}` : "1920x1080") + "px\n" +
+                "   |          |      Theme: Cosmic System UI\n" +
+                "   +__________+      CPU: Google GenAI Client Engine (Hyperthreaded)\n" +
+                "                     Memory: " + ramUsage + "GB / 8.0GB\n" +
+                "                     Direct Link: " + (typeof navigator !== "undefined" && navigator.onLine ? "SECURED (ONLINE)" : "CACHED_LOCAL (OFFLINE)");
+        break;
+      case "speedtest":
+        reply = `--- PORTFOLIO BENCHMARK DIAGNOSTICS ---\n` +
+                `- SERVER TTFB: 24ms (Fast Edge Network)\n` +
+                `- LIGHTHOUSE SEO SCORE: 100/100\n` +
+                `- WEB PERFORMANCE: 98% Optimized\n` +
+                `- ASSETS PAYLOAD: Compressed brotli streams\n` +
+                `- WORDPRESS RENDER CONF: Vite-to-Static Bundle Asset\n` +
+                `- STATUS: Outstanding (High speed rendering secure)`;
+        break;
+      case "totp":
+        reply = `--- GOOGLE AUTHENTICATOR // MULTI-FACTOR ---\n` +
+                `- DIRECT KEY NAME: saikat-support@stgroup\n` +
+                `- CURRENT ACTIVE CODE: ${activeToken}\n` +
+                `- SYNC THREAD: OK (Updates every 30 seconds)\n` +
+                `Authentication bypass code valid. Ready for Admin CMS terminal logon.`;
+        break;
+      case "biometrics":
+        // Auto transfer to biometric vault tab and trigger the scan
+        setTimeout(() => {
+          setActiveTab("vault");
+          triggerBiometricScan();
+        }, 150);
+        reply = `[AUTHORIZATION SYNC INITIATING]\nTransferring controls to the biometric vault module... Running automatic scan protocol.`;
         break;
       case "clear":
         setConsoleHistory([]);
@@ -287,6 +415,17 @@ export default function SystemMonitor({ isEmbedded = false }: { isEmbedded?: boo
               >
                 <ShieldAlert className="w-3.5 h-3.5" />
                 FIREWALL_FEED
+              </button>
+              <button
+                onClick={() => setActiveTab("vault")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-[1.5px] font-mono text-[0.58rem] tracking-wider uppercase transition-all duration-300 ${
+                  activeTab === "vault" 
+                    ? "bg-gold/15 text-gold border border-gold/20 font-bold" 
+                    : "text-muted-slate/85 hover:text-text-primary"
+                }`}
+              >
+                <Fingerprint className="w-3.5 h-3.5" />
+                BIO_VAULT
               </button>
             </div>
           </div>
@@ -530,6 +669,204 @@ export default function SystemMonitor({ isEmbedded = false }: { isEmbedded?: boo
                       );
                     })}
                   </div>
+                </motion.div>
+              )}
+
+              {/* Tab 4: Interactive Biometric Data Entry & NID Archive Audits Verification */}
+              {activeTab === "vault" && (
+                <motion.div
+                  key="vault-tab"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.25 }}
+                  className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 items-start"
+                >
+                  
+                  {/* Left Column: Handshake Scanner Grid Interface */}
+                  <div className="lg:col-span-5 bg-black/45 border border-white/[0.04] p-5 rounded-[2px] flex flex-col items-center justify-between min-h-[350px]">
+                    <div className="text-center w-full">
+                      <span className="font-mono text-[0.5rem] tracking-[0.2em] text-gold uppercase block mb-1">SECURE VERIFICATION GATE</span>
+                      <h4 className="font-mono text-[0.62rem] text-muted-slate uppercase tracking-wider mb-6">BANGLADESH ELECTION COMMISSION PORTAL</h4>
+                    </div>
+
+                    {/* Highly stylized ocular / fingerprint sensor simulation */}
+                    <div className="relative w-36 h-36 flex items-center justify-center border border-dashed border-white/10 rounded-full mb-6">
+                      
+                      {/* Rotating scanning grids */}
+                      <motion.div 
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                        className="absolute inset-1 border border-dotted border-gold/30 rounded-full"
+                      />
+                      <motion.div 
+                        animate={{ rotate: -360 }}
+                        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                        className="absolute inset-4 border border-dashed border-gold/15 rounded-full"
+                      />
+
+                      {/* Fingerprint logo or scanning icon */}
+                      <div className="z-10 p-4 rounded-full bg-white/[0.02] border border-white/[0.05] shadow-inner">
+                        <Fingerprint className={`w-14 h-14 transition-colors ${
+                          scanState === "scanning" 
+                            ? "text-gold animate-pulse" 
+                            : scanState === "complete" 
+                            ? "text-emerald-400" 
+                            : "text-[#a0a0ab]/40 hover:text-gold"
+                        }`} />
+                      </div>
+
+                      {/* Laser Line Overlay */}
+                      {scanState === "scanning" && (
+                        <motion.div 
+                          animate={{ y: [-50, 50, -50] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                          className="absolute left-6 right-6 h-[2px] bg-gold shadow-[0_0_8px_#c8a96e]"
+                        />
+                      )}
+                    </div>
+
+                    {/* Progress Slider */}
+                    <div className="w-full space-y-2 mt-2">
+                      <div className="flex justify-between font-mono text-[0.58rem] text-muted-slate">
+                        <span className="uppercase text-left min-w-0 truncate">{scanPhaseText || "Awaiting scan trigger..."}</span>
+                        <span className="font-bold text-white shrink-0 ml-2">{scanPercent}%</span>
+                      </div>
+                      <div className="w-full bg-[#14141f] h-[4px] rounded-full overflow-hidden border border-white/[0.03]">
+                        <motion.div 
+                          className={`h-full rounded-full ${scanState === "complete" ? "bg-emerald-400" : "bg-gold"}`}
+                          style={{ width: `${scanPercent}%` }}
+                          transition={{ duration: 0.1 }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Trigger Button */}
+                    <button
+                      type="button"
+                      onClick={triggerBiometricScan}
+                      disabled={scanState === "scanning"}
+                      className="mt-6 w-full py-2.5 bg-gold hover:bg-gold-light disabled:bg-white/5 text-bg-dark disabled:text-muted-slate text-[0.58rem] font-mono tracking-widest uppercase font-black rounded-[2px] transition-all flex items-center justify-center gap-2 border border-gold/20 disabled:border-transparent cursor-pointer"
+                    >
+                      {scanState === "scanning" ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin text-bg-dark" />
+                          Auditing biometric records...
+                        </>
+                      ) : scanState === "complete" ? (
+                        <>
+                          <ShieldCheck className="w-3.5 h-3.5 text-bg-dark" />
+                          Authorized // Re-scan
+                        </>
+                      ) : (
+                        <>
+                          <Fingerprint className="w-3.5 h-3.5 text-bg-dark" />
+                          Scan Biometrics
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Right Column: Decrypted ID Documents Payload / Live Audit Log */}
+                  <div className="lg:col-span-7 flex flex-col justify-between min-h-[350px]">
+                    <AnimatePresence mode="wait">
+                      {!showIdentityDoc ? (
+                        <motion.div
+                          key="dossier-unauth"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="border border-dashed border-white/10 bg-black/10 rounded-[3px] p-6 flex flex-col items-center justify-center text-center flex-grow min-h-[350px]"
+                        >
+                          <Lock className="w-10 h-10 text-gold/30 mb-4 animate-bounce" />
+                          <h5 className="font-mono text-xs text-text-primary capitalize tracking-wide font-bold">Secure Administrative Ledger Locked</h5>
+                          <p className="mt-2 text-[#a0a0ab]/40 font-mono text-[0.58rem] max-w-sm leading-relaxed">
+                            Access to Ayman's official election commission registry documents, WordPress security credentials, and biometric signature ledger requires security clearance override.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={triggerBiometricScan}
+                            className="mt-5 text-[0.5rem] font-mono tracking-widest text-gold hover:text-white uppercase select-none px-3 py-1.5 bg-gold/5 border border-gold/15 hover:bg-gold/15 hover:border-gold/30 rounded-[1px] cursor-pointer"
+                          >
+                            RUN INTEGRITY SCAN
+                          </button>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="dossier-auth"
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="border border-emerald-500/20 bg-bg-card rounded-[3px] p-6 flex flex-col justify-between flex-grow min-h-[350px]"
+                        >
+                          <div>
+                            {/* Card badge header */}
+                            <div className="flex items-center justify-between border-b border-white/[0.04] pb-4 mb-4">
+                              <div className="flex items-center gap-2">
+                                <Unlock className="w-4 h-4 text-emerald-400" />
+                                <span className="font-mono text-[0.55rem] text-emerald-400 font-bold uppercase tracking-wider">
+                                  BDEC RECOGNIZED // IDENTIFICATION GRANTED
+                                </span>
+                              </div>
+                              <span className="font-mono text-[0.5rem] text-gold font-semibold uppercase leading-none border border-gold/20 px-2 py-0.5 rounded-[1px] bg-gold/5">
+                                LEVEL 4 ADMIN
+                              </span>
+                            </div>
+
+                            {/* Dossier contents structured perfectly */}
+                            <div className="space-y-3 font-mono text-[0.62rem] text-muted-lavender">
+                              <div className="grid grid-cols-3 border-b border-white/[0.02] py-1.5">
+                                <span className="text-[#a0a0ab]/40 uppercase">OFFICER NAME</span>
+                                <span className="col-span-2 text-text-primary font-bold">AYMAN SAIKAT</span>
+                              </div>
+                              <div className="grid grid-cols-3 border-b border-white/[0.02] py-1.5">
+                                <span className="text-[#a0a0ab]/40 uppercase">NID OFFICE</span>
+                                <span className="col-span-2 text-text-primary">Bangladesh Election Commission (Agargaon, Dhaka)</span>
+                              </div>
+                              <div className="grid grid-cols-3 border-b border-white/[0.02] py-1.5">
+                                <span className="text-[#a0a0ab]/40 uppercase">REGISTRY ID</span>
+                                <span className="col-span-2 text-text-primary font-mono text-gold font-bold">BDEC-NID-2254-SEC</span>
+                              </div>
+                              <div className="grid grid-cols-3 border-b border-white/[0.02] py-1.5">
+                                <span className="text-[#a0a0ab]/40 uppercase">RECORD MATCH</span>
+                                <span className="col-span-2 text-emerald-400 font-black">98.4% COEFFICIENT BIOMETRIC MATCH_SUCCESS</span>
+                              </div>
+                              <div className="grid grid-cols-3 border-b border-white/[0.02] py-1.5">
+                                <span className="text-[#a0a0ab]/40 uppercase">SERVICE ROLES</span>
+                                <span className="col-span-2 text-text-primary">Data Entry Operator, Biometric Lead, Web Admin</span>
+                              </div>
+                            </div>
+
+                            {/* Verified achievements indices inside dossier */}
+                            <div className="mt-5 bg-white/[0.02] border border-white/[0.04] p-3 rounded-[1px]">
+                              <span className="block font-mono text-[0.52rem] text-[#a0a0ab]/40 uppercase tracking-widest mb-1.5">VERIFIED INVENTORY MATRIX</span>
+                              <div className="space-y-1 font-mono text-[0.58rem] text-text-primary">
+                                <div className="flex items-center gap-2">
+                                  <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                                  <span>Digitized & archived 32K+ offline land ministry files.</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                                  <span>Integrated live audio & local lower-thirds in News TV Bangla.</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                                  <span>Uptime assurance & hosting coordination for ST Group Portals.</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Authenticator and ledger tracker */}
+                          <div className="border-t border-white/[0.04] pt-4 mt-6 flex items-center justify-between font-mono text-[0.52rem] text-muted-slate text-right">
+                            <span className="text-[#a0a0ab]/30 uppercase text-left">AUTH_TRAN_ID: {activeToken}X25</span>
+                            <span className="text-emerald-500 font-bold">REGISTRY SYNC STATUS: ENCRYPTED // COMPLETE</span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
                 </motion.div>
               )}
 

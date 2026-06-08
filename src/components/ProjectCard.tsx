@@ -166,9 +166,16 @@ export default function ProjectCard({
       <div style={{ transform: "translateZ(25px)" }} className="relative z-10 transition-transform duration-300">
         {/* Header Block */}
         <motion.div variants={childVariants} className="flex items-center justify-between mb-4">
-          <span className="font-mono text-[0.58rem] tracking-[0.18em] uppercase text-gold bg-gold/15 px-3 py-1 rounded-[1px] border border-gold/25">
-            {project.category}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-[0.58rem] tracking-[0.18em] uppercase text-gold bg-gold/15 px-3 py-1 rounded-[1px] border border-gold/25">
+              {project.category}
+            </span>
+            {project.beforeImage && project.afterImage && (
+              <span className="font-mono text-[0.51rem] tracking-widest uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-[1px] border border-emerald-500/20">
+                ★ BEFORE/AFTER
+              </span>
+            )}
+          </div>
           
           <div className="flex items-center gap-3">
             {/* Completion Status Progress Ring */}
