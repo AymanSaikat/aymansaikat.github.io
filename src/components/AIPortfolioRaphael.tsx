@@ -27,6 +27,110 @@ interface AIPortfolioRaphaelProps {
   experienceList: any[];
 }
 
+/**
+ * Offline-intelligent systems answering core.
+ * Evaluates context query and computes formatted markdown using the real portfolio data registry.
+ */
+function queryLocalKnowledgeCore(
+  query: string,
+  profile: any,
+  projectsList: any[],
+  skillsList: any[],
+  experienceList: any[]
+): string {
+  const normalized = query.toLowerCase();
+
+  // Helper matching functions
+  const keys = (words: string[]) => words.some(w => normalized.includes(w));
+
+  if (keys(["skill", "capable", "expert", "expertis", "know", "technic", "dossier", "stack", "language", "program"])) {
+    let skillText = `##### SECURE DATA RETRIEVED: TECHNICAL INDEX ⚡\n\n`;
+    skillText += `Rimon Ahmed possesses senior competencies in systems deployment, security management, and frontend/backend infrastructure development.\n\n`;
+    
+    if (skillsList && skillsList.length > 0) {
+      skillsList.forEach((cat: any) => {
+        skillText += `**${cat.name || "Specialization"}**:\n`;
+        const items = Array.isArray(cat.skills) ? cat.skills : (cat.items || []);
+        if (items.length > 0) {
+          skillText += ` - ${items.map((s: any) => s.name || s).join(", ")}\n`;
+        }
+      });
+    } else {
+      skillText += `- **Systems Administration**: Enterprise server orchestration, Linux environments, database security modeling.\n`;
+      skillText += `- **Web Application Orchestration**: Specialized WordPress customization, modern React framework integration, and performance optimizations (trimming asset load speeds by up to 40%).\n`;
+      skillText += `- **Biometric Verification**: Precision configuration of secure iris scan registries and rapid high-accuracy fingerprint capture interfaces.\n`;
+      skillText += `- **Interactive Asset Production**: Expert editing structures with Adobe Premiere, lower-third live broadcasting alignments, and graphical layout blueprints.\n`;
+    }
+    
+    return skillText;
+  }
+
+  if (keys(["project", "work", "build", "portfolio", "develop", "st group", "election", "landing", "archiving", "savar"])) {
+    let responseText = `##### DISPATCH COMPLETE: ENTERPRISE PROJECT INDEX 📁\n\n`;
+    responseText += `Rimon Ahmed has engineered several high-accuracy database solutions and web portals. Operational indices include:\n\n`;
+
+    if (projectsList && projectsList.length > 0) {
+      projectsList.forEach((proj: any) => {
+        responseText += `- **${proj.title || proj.name}**\n  *Role/Goal*: ${proj.description || "System integration & deployment"}\n`;
+        if (proj.tech) {
+          responseText += `  *Tech Core*: ${Array.isArray(proj.tech) ? proj.tech.join(", ") : proj.tech}\n`;
+        }
+        responseText += `\n`;
+      });
+    } else {
+      responseText += `- **ST Group Corporate Portals**: Configured, stabilized and fully optimized corporate web structures, achieving 40% enhancements in response velocity.\n`;
+      responseText += `- **Biometric Identification Pipeline**: Managed biometric capture terminals (dual iris & fingerprints) for Savar Region of the Bangladesh Election Commission with perfect fidelity.\n`;
+      responseText += `- **News Tv Bangla live assets**: Designed active video transitions, audio track exports and broadcast grids.\n`;
+      responseText += `- **RAJUK project office file archive**: Transcribed, validated and categorized high-volume historical real estate documents with unmatched cataloging speed.\n`;
+    }
+
+    return responseText;
+  }
+
+  if (keys(["experience", "job", "career", "history", "milestone", "employ", "workplace"])) {
+    let responseText = `##### DECRYPTING CHRONOLOGICAL CAREER GRID 📅\n\n`;
+    responseText += `Rimon has built high-speed validation pipelines and managed production servers for prominent institutions. Chronology includes:\n\n`;
+
+    if (experienceList && experienceList.length > 0) {
+      experienceList.forEach((exp: any) => {
+        responseText += `- **${exp.role || "Specialist"}** at *${exp.org || exp.company}* (${exp.date || "Active Period"})\n`;
+        const points = Array.isArray(exp.points) ? exp.points : [exp.points || "Core operations"];
+        points.forEach((p: string) => {
+          responseText += `  - ${p}\n`;
+        });
+        responseText += `\n`;
+      });
+    } else {
+      responseText += `- **Web Administrator & Systems Specialist** | *ST Group Corporate Operations*\n  - Designed responsive entry channels and landing architectures; speed-boosted page generation times by 40%.\n`;
+      responseText += `- **Biometric Fingerprint & Iris Operator** | *Bangladesh Election Commission*\n  - Operated national identification registers with 100% security accuracy for the Savar node.\n`;
+      responseText += `- **Media Hub Technical Support** | *News Tv Bangla*\n  - Administered video servers and broadcast tracks under real-time constraints.\n`;
+      responseText += `- **Technical Document Specialist** | *RAJUK Urban Development Project Office*\n  - Cataloged high-threat land ownership registers with 0% margin of error.\n`;
+    }
+
+    return responseText;
+  }
+
+  if (keys(["contact", "hire", "email", "mail", "reach", "message", "touch", "write", "send", "chat", "contracting"])) {
+    return `##### TRANSPHASE COMMS STATUS: STANDBY ✉️\n\nDirect contact vectors for **Rimon Ahmed** are online:\n\n- **Direct Transmission Form**: You can send an immediate SMTP request by filling out the **Contact Form** directly on this page! It integrates standard spam regulation policies.\n- **Direct Email**: Send a message to **dev.rimonahmed@gmail.com**.\n- **Enterprise Nodes**: Connect via LinkedIn or explore his GitHub records using the quicklinks in the page header and footer grids.\n\n*Would you like me to guide you to the contact section?*`;
+  }
+
+  if (keys(["cv", "resume", "download", "pdf", "file"])) {
+    const url = profile?.cvUrl || "https://github.com/AymanSaikat/aymansaikat.github.io/blob/aefd51a899d3de2ec5724b4f0c1a4b469d275bb1/assets/Rimon%20Ahmed%20Resume%20for%20web.pdf";
+    return `##### ARCHIVE RETRIEVAL: QUALIFICATION RECORDS 📄\n\n- **Rimon Ahmed's Professional Resume**: You can read or download his verified resume directly at the link below:\n\n  👉 [Direct PDF Resume Link](${url})\n\nThis file highlights his extensive technical support, system engineering audits, and WordPress administration milestones.`;
+  }
+
+  if (keys(["who", "about", "bio", "yourself", "name", "raphael", "agent"])) {
+    return `##### SYSTEMS COGNITIVE AGENT: ONLINE 🛡️\n\nI am **Raphael**, Rimon Ahmed's dedicated **AI Systems Assistant**.\n\nMy primary operations include:\n- Mapping queries to Rimon's engineering archives.\n- Analyzing database deployments, security records, and server integrations.\n- Facilitating recruiters and clients in scheduling coordination nodes.\n\nI am currently running in **offline-resilient (local cache nodes) execution mode** to ensure immediate response velocity regardless of host environment constraints (such as direct deployment to GitHub Pages).`;
+  }
+
+  if (keys(["wordpress", "server", "admin", "video", "edit", "graphic", "design", "security", "database", "iris", "biometric"])) {
+    return `##### SECURE QUERY DECODED: ${query.toUpperCase()} 🛠️\n\n**Rimon's Core Administration Metrics**:\n\n- **WordPress Deployment**: Mastered layout designs, speed optimizations, responsive widgets, and landing setups.\n- **Database Architecture**: Managed Iris scan archives & fingerprint capture nodes with zero data loss or synchronization drift.\n- **Graphic Design & Video Editing**: Highly proficient in Adobe Premiere and Photoshop, exporting lower-third assets, live media transitions, and corporate branding schemas.\n- **Server Infrastructure**: Standard hosting operations, server hardening, custom assets pipeline configurations, and diagnostic scripting.`;
+  }
+
+  // Default intelligent greeting summarizing his competencies
+  return `##### COMMAND RECEIVED ⚡\n\nGreetings! I am currently operating on Rimon's localized backup database (ideal for static hosts like GitHub Pages).\n\nHere are some operations I can execute immediately:\n\n- **Qualifications**: Ask me to list Rimon's **"skills"** or **"experience milestones"**.\n- **Build Artifacts**: Ask about his leading **"projects"** (e.g. ST Group portal, biometric scanner systems).\n- **Resumes**: Request his **"resume"** or **"CV"** link.\n- **Communications**: Ask how to **"contact"** or **"hire"** him.\n\nWhat can I retrieve for you today?`;
+}
+
 export default function AIPortfolioRaphael({
   profile,
   projectsList,
@@ -86,31 +190,45 @@ How can I assist you today? Feel free to ask about his WordPress work, Server sp
         text: m.text
       }));
 
-      const res = await fetch("/api/gemini/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message: textToSend,
-          history,
-          profileState: profile,
-          projectsList,
-          skillsList,
-          experienceList
-        })
-      });
+      let apiSuccess = false;
+      let textResponse = "";
 
-      if (!res.ok) {
-        throw new Error("Core intelligence link failed to return valid data.");
+      try {
+        const res = await fetch("/api/gemini/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: textToSend,
+            history,
+            profileState: profile,
+            projectsList,
+            skillsList,
+            experienceList
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          textResponse = data.text || "";
+          apiSuccess = true;
+        } else if (res.status === 404) {
+          console.warn("[Raphael Engine] Static deployment detected (404 API Endpoint). Directing connection request to local storage node.");
+        }
+      } catch (fetchErr) {
+        console.warn("[Raphael Engine] Network interface unreachable. Activating off-grid localized core.", fetchErr);
       }
 
-      const data = await res.json();
+      // High-Fidelity Client-side AI Simulation Fallback Node for Offline/Static deployments
+      if (!apiSuccess) {
+        textResponse = queryLocalKnowledgeCore(textToSend, profile, projectsList, skillsList, experienceList);
+      }
       
       const raphaelMessage: Message = {
         id: "raphael-" + Date.now(),
         role: "model",
-        text: data.text || "I processed your request, but returned an empty response. Let's try formulating it slightly differently.",
+        text: textResponse,
         timestamp: new Date()
       };
 
