@@ -126,29 +126,65 @@ export default function App() {
   });
 
   const loadCmsData = async () => {
-    try {
-      if (typeof window !== "undefined") {
+    if (typeof window !== "undefined") {
+      try {
         setIsMaintenanceActive(localStorage.getItem("ayman_portfolio_maintenance_active") === "true");
         setIsAdminLoggedIn(localStorage.getItem("ayman_portfolio_logged_in") === "true");
+      } catch (storageErr) {
+        console.warn("Storage item parsing error:", storageErr);
       }
-      const p = await dataService.getProfile();
-      const prs = await dataService.getProjects();
-      const sks = await dataService.getSkillCategories();
-      const exps = await dataService.getExperiences();
-      const eds = await dataService.getEducation();
-      const sts = await dataService.getStats();
-      const mrq = await dataService.getMarquee();
+    }
 
-      setProfile(p);
-      setOriginalCvUrl(p.cvUrl);
-      setProjectsList(prs);
-      setSkillsList(sks);
-      setExperienceList(exps);
-      setEducationList(eds);
-      setStatsList(sts);
-      setMarqueeList(mrq);
+    try {
+      const p = await dataService.getProfile();
+      if (p) {
+        setProfile(p);
+        setOriginalCvUrl(p.cvUrl);
+      }
     } catch (err) {
-      console.warn("Dynamic dataset fetch issues, defaulted to static fallback metadata.");
+      console.warn("Profiles fetch offline status, using local default dataset.");
+    }
+
+    try {
+      const prs = await dataService.getProjects();
+      if (prs) setProjectsList(prs);
+    } catch (err) {
+      console.warn("Projects fetch offline status, using local default dataset.");
+    }
+
+    try {
+      const sks = await dataService.getSkillCategories();
+      if (sks) setSkillsList(sks);
+    } catch (err) {
+      console.warn("Skills fetch offline status, using local default dataset.");
+    }
+
+    try {
+      const exps = await dataService.getExperiences();
+      if (exps) setExperienceList(exps);
+    } catch (err) {
+      console.warn("Experiences fetch offline status, using local default dataset.");
+    }
+
+    try {
+      const eds = await dataService.getEducation();
+      if (eds) setEducationList(eds);
+    } catch (err) {
+      console.warn("Education fetch offline status, using local default dataset.");
+    }
+
+    try {
+      const sts = await dataService.getStats();
+      if (sts) setStatsList(sts);
+    } catch (err) {
+      console.warn("Stats fetch offline status, using local default dataset.");
+    }
+
+    try {
+      const mrq = await dataService.getMarquee();
+      if (mrq) setMarqueeList(mrq);
+    } catch (err) {
+      console.warn("Marquee items fetch offline status, using local default dataset.");
     }
   };
 
